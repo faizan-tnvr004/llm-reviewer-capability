@@ -1,0 +1,3 @@
+google-genai>=2.12
+groq>=1.5
+python-dotenv>=1.0
