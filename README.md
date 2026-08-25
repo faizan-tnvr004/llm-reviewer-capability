@@ -17,8 +17,8 @@ problems.
 The cross-family reviewer (C2) improves accuracy from 52% to 64%
 (p = 0.0005, exact McNemar) with **zero damaged answers**. Self-review (C1)
 has the highest detection rate (0.85 recall) but falsely rejects 35% of
-correct answers; its low damage rate is an artifact of the executor returning
-the same answer on 41% of its own rejections. The weak reviewer (C3) changed zero of 100 final
+correct answers; its low damage rate is an artifact of the executor ignoring
+83% (15 of 18) of its false rejections. The weak reviewer (C3) changed zero of 100 final
 answers while doubling token cost.
 
 ## Repository Layout
