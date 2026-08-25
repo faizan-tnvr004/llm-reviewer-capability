@@ -59,8 +59,8 @@ ANALYSIS_PLAN.md     # Pre-registered analysis plan (see below)
 
 ```bash
 # 1. Clone and set up a virtualenv
-git clone https://github.com/faizan-tnvr004/multiagent-error-diversity.git
-cd multiagent-error-diversity
+git clone https://github.com/faizan-tnvr004/llm-reviewer-capability.git
+cd llm-reviewer-capability
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -129,10 +129,3 @@ shows the project's methodological trajectory, not something to hide.
 - **Free-tier provider constraints.** Daily rate limits necessitated
   multi-day runs; the 8 000 TPM cap on Groq caused 29% of GPT-OSS reviews
   to return empty (conservatively scored as ACCEPT).
-
-## Repository Name
-
-The repository name `multiagent-error-diversity` reflects the earlier
-abandoned study, not the current one. A rename (e.g.
-`llm-reviewer-capability`) is planned; GitHub auto-redirects old URLs, so
-existing links will continue to work.
