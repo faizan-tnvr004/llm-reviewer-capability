@@ -10,15 +10,15 @@ problems.
 | Condition | Reviewer | Accuracy | Δ vs baseline | p (McNemar) |
 |-----------|----------|----------|---------------|-------------|
 | C0 | None (baseline) | 52% | — | — |
-| C1 | Self-review (Gemini) | 54% | +2 pp | 0.8238 |
+| C1 | Self-review (Gemini) | 58% | +6 pp | 0.1460 |
 | C2 | Cross-family mid-tier (GPT-OSS-20B) | 64% | **+12 pp** | **0.0005** |
 | C3 | Weak (Llama 3.1 8B) | 52% | 0 pp | 1.0000 |
 
 The cross-family reviewer (C2) improves accuracy from 52% to 64%
 (p = 0.0005, exact McNemar) with **zero damaged answers**. Self-review (C1)
 has the highest detection rate (0.85 recall) but falsely rejects 35% of
-correct answers; its low damage rate is an artifact of the executor ignoring
-83% of its own rejections. The weak reviewer (C3) changed zero of 100 final
+correct answers; its low damage rate is an artifact of the executor returning
+the same answer on 41% of its own rejections. The weak reviewer (C3) changed zero of 100 final
 answers while doubling token cost.
 
 ## Repository Layout
@@ -52,7 +52,9 @@ run_experiment_data/
   cache/             # Response cache (gitignored; not needed to reproduce
                      #   the analysis, only to resume an interrupted run)
 
-ANALYSIS_PLAN.md     # Pre-registered analysis plan (see below)
+ANALYSIS_PLAN.md              # Pre-registered analysis plan (see below)
+ANALYSIS_PLAN_AMENDMENT.md    # Amendment documenting the change of research
+                              #   question after calibration
 ```
 
 ## How to Reproduce
@@ -80,12 +82,18 @@ The harness **caches every API response to disk** and **resumes after
 interruption**. Free-tier rate limits will cause daily stops; simply re-run
 the next day and the cache picks up where it left off. No work is repeated.
 
-To re-run the analysis scripts on the existing data (no API keys needed):
+## Reproduce the Analysis
+
+The four analysis scripts read the committed `run_experiment_data/log.jsonl`
+and require **no API access**:
 
 ```bash
-python mcnemar.py
-python rej_quality.py
-python no_change.py
+python mcnemar.py        # McNemar's exact test on paired accuracy comparisons
+python rej_quality.py    # Per-rejection outcome breakdown with Fisher tests
+python no_change.py      # No-change rate (rejected but answer unchanged)
+python run_experiment.py # Prints per-condition metrics (re-run reads the
+                         #   existing log; only makes API calls if the log
+                         #   is incomplete)
 ```
 
 To run the offline test suite (no API keys needed):
@@ -101,19 +109,13 @@ python tests/test_math_robustness.py
 
 ## Pre-Registered Analysis Plan
 
-The pre-registered analysis plan is in
-[ANALYSIS_PLAN.md](ANALYSIS_PLAN.md). It was **committed before any
-experiments were run** (commit `6844da4`, 2026-07-21) and is unchanged.
-
-The plan describes the *original* research question (error diversity as a
-predictor of multi-agent benefit). After calibration runs showed the
-free-tier constraints made the diversity study infeasible, the research
-question was changed to the reviewer-capability study reported here. This
-pivot is documented by the commit history: the analysis plan was committed
-under the earlier framing; the experiment code was committed later
-(`33efec5`, 2026-08-09) under the current framing. The plan remains in the
-repo as-is — it is the pre-registration record of the original question and
-shows the project's methodological trajectory, not something to hide.
+[ANALYSIS_PLAN.md](ANALYSIS_PLAN.md) is the original pre-registered plan,
+**committed before any experiments were run** (commit `6844da4`, 2026-07-21)
+and preserved unchanged.
+[ANALYSIS_PLAN_AMENDMENT.md](ANALYSIS_PLAN_AMENDMENT.md) documents the
+change of research question made after calibration showed the original
+design was infeasible with the available models. Both are retained as a
+record of the project's methodological trajectory.
 
 ## Limitations
 
