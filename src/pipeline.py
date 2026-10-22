@@ -1,5 +1,9 @@
 """PER pipeline: Executor -> Reviewer -> (Revise once).
 
+Task-agnostic: works for both math (default) and code extensions via optional
+hooks for grading, prompts, and reviewer dispatch.  All hooks have defaults
+that preserve the original math-only behaviour exactly.
+
 Design (per the amended plan):
 - Executor is FIXED (Gemini). It solves each task ONCE; the same solution A0 is
   then reviewed under every reviewer condition. This paired design isolates the
@@ -18,6 +22,7 @@ Design (per the amended plan):
 
 from __future__ import annotations
 
+import inspect
 import re
 import time
 from typing import Callable, List, Optional
@@ -156,6 +161,17 @@ class TokenMeter:
 
 
 # ---------------------------------------------------------------------------
+# ToolReviewer protocol — non-LLM reviewers (e.g. public-test runner)
+# ---------------------------------------------------------------------------
+
+def _is_tool_reviewer(obj) -> bool:
+    """True if obj has a .review(task, solution_text) method — the ToolReviewer
+    protocol.  Checked by duck-typing so test_reviewer.py doesn't need to
+    import from pipeline and vice-versa."""
+    return hasattr(obj, "review") and callable(getattr(obj, "review", None))
+
+
+# ---------------------------------------------------------------------------
 # The experiment
 # ---------------------------------------------------------------------------
 
@@ -165,6 +181,12 @@ def run_per_experiment(tasks: List[Task],
                        cache: DiskCache,
                        log: RunLog,
                        meter: TokenMeter,
+                       grader: Optional[Callable] = None,
+                       review_prompt: Optional[str] = None,
+                       revise_prompt: Optional[str] = None,
+                       review_input_fn: Optional[Callable] = None,
+                       revise_input_fn: Optional[Callable] = None,
+                       extra_log_fn: Optional[Callable] = None,
                        verbose: bool = True) -> dict:
     """Run the full PER experiment.
 
@@ -173,7 +195,19 @@ def run_per_experiment(tasks: List[Task],
     Every (task, condition) outcome is logged with grading of A0 and final.
 
     Resumable: all three stages are cached; a daily-limit stop resumes cleanly.
+
+    Optional hooks (all default to math-study behaviour):
+      grader(task, response) -> dict         — custom grading (default: grade_numeric)
+      review_prompt                          — template string with {problem}, {solution}
+      revise_prompt                          — template string with {problem}, {solution}, {critique}
+      review_input_fn(task, a0_text) -> dict  — override {problem} and {solution} for review
+      revise_input_fn(task, a0_text, critique) -> dict — override revise template fields
+      extra_log_fn(task, cond, a0_text, a0_grade, final_grade) -> dict — extra fields for log
     """
+    _grader = grader or grade_numeric
+    _review_prompt = review_prompt or REVIEW_PROMPT
+    _revise_prompt = revise_prompt or REVISE_PROMPT
+
     already = {(r["task_id"], r["condition"]) for r in log.load()}
     done = 0
 
@@ -187,7 +221,7 @@ def run_per_experiment(tasks: List[Task],
                                      task.task_id, "shared")
                 cache.put(*a0_key, a0_text)
 
-            a0_grade = grade_numeric(task, a0_text)
+            a0_grade = _grader(task, a0_text)
 
             for cond_name, reviewer in reviewer_conditions.items():
                 if (task.task_id, cond_name) in already:
@@ -197,28 +231,43 @@ def run_per_experiment(tasks: List[Task],
                     # C0: no review, final = A0
                     _log_outcome(log, task, cond_name, a0_text, a0_grade,
                                  review=None, final_text=a0_text,
-                                 final_grade=a0_grade)
+                                 final_grade=a0_grade,
+                                 extra_log_fn=extra_log_fn)
                     already.add((task.task_id, cond_name)); done += 1
                     continue
 
                 # ---- Stage 2: review ----
-                r_key = (f"per_review_{cond_name}", reviewer.model_id,
+                r_key = (f"per_review_{cond_name}", reviewer.model_id
+                         if hasattr(reviewer, "model_id") else str(reviewer),
                          task.task_id, 0)
                 review_text = cache.get(*r_key)
+
                 if review_text is None:
-                    review_text = meter.call(
-                        reviewer,
-                        REVIEW_PROMPT.format(
-                            problem=strip_answer_instruction(task.prompt),
-                            solution=truncate_solution(a0_text)),
-                        "review", task.task_id, cond_name)
+                    if _is_tool_reviewer(reviewer):
+                        # ToolReviewer: call .review() directly, no LLM call
+                        review_text = reviewer.review(task, a0_text)
+                    else:
+                        # LLM reviewer: format the review prompt
+                        if review_input_fn:
+                            fields = review_input_fn(task, a0_text)
+                        else:
+                            fields = {
+                                "problem": strip_answer_instruction(task.prompt),
+                                "solution": truncate_solution(a0_text),
+                            }
+                        review_text = meter.call(
+                            reviewer,
+                            _review_prompt.format(**fields),
+                            "review", task.task_id, cond_name)
                     cache.put(*r_key, review_text)
+
                 review = parse_review(review_text)
 
                 if review["verdict"] == "ACCEPT":
                     _log_outcome(log, task, cond_name, a0_text, a0_grade,
                                  review=review, final_text=a0_text,
-                                 final_grade=a0_grade)
+                                 final_grade=a0_grade,
+                                 extra_log_fn=extra_log_fn)
                     already.add((task.task_id, cond_name)); done += 1
                     continue
 
@@ -227,17 +276,25 @@ def run_per_experiment(tasks: List[Task],
                          task.task_id, 0)
                 revised_text = cache.get(*v_key)
                 if revised_text is None:
+                    if revise_input_fn:
+                        fields = revise_input_fn(task, a0_text,
+                                                review["critique"])
+                    else:
+                        fields = {
+                            "problem": task.prompt,
+                            "solution": a0_text,
+                            "critique": review["critique"],
+                        }
                     revised_text = meter.call(
                         executor,
-                        REVISE_PROMPT.format(problem=task.prompt,
-                                             solution=a0_text,
-                                             critique=review["critique"]),
+                        _revise_prompt.format(**fields),
                         "revise", task.task_id, cond_name)
                     cache.put(*v_key, revised_text)
-                final_grade = grade_numeric(task, revised_text)
+                final_grade = _grader(task, revised_text)
                 _log_outcome(log, task, cond_name, a0_text, a0_grade,
                              review=review, final_text=revised_text,
-                             final_grade=final_grade)
+                             final_grade=final_grade,
+                             extra_log_fn=extra_log_fn)
                 already.add((task.task_id, cond_name)); done += 1
 
         except DailyLimitExhausted:
@@ -250,8 +307,8 @@ def run_per_experiment(tasks: List[Task],
 
 
 def _log_outcome(log, task, condition, a0_text, a0_grade, review,
-                 final_text, final_grade):
-    log.append({
+                 final_text, final_grade, extra_log_fn=None):
+    record = {
         "task_id": task.task_id,
         "condition": condition,
         "difficulty": task.meta.get("difficulty"),
@@ -265,7 +322,12 @@ def _log_outcome(log, task, condition, a0_text, a0_grade, review,
         "final_correct": final_grade["correct"],
         "revised": bool(review and review.get("verdict") == "REJECT"),
         "ts": time.time(),
-    })
+    }
+    if extra_log_fn:
+        extra = extra_log_fn(task, condition, a0_text, a0_grade, final_grade)
+        if extra:
+            record.update(extra)
+    log.append(record)
 
 
 # ---------------------------------------------------------------------------

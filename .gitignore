@@ -220,3 +220,5 @@ __marimo__/
 # Project-specific
 scratch_*/
 run_experiment_data/cache/
+run_code_data/cache/
+run_code_data/raw/
