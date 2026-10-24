@@ -21,13 +21,25 @@ Two things:
 Run from repo root:  python rejection_quality.py
 No API calls. Pure re-analysis of the existing log.
 """
-import json, os
+import argparse, json, os
 from math import comb
 from itertools import combinations
 
-LOG = os.path.join("run_experiment_data", "log.jsonl")
-rows = [json.loads(l) for l in open(LOG, encoding="utf-8") if l.strip()]
-conds = sorted({r["condition"] for r in rows})
+DEFAULT_LOG = os.path.join("run_experiment_data", "log.jsonl")
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Rejection-quality analysis.")
+    p.add_argument("--log", default=DEFAULT_LOG, help="Path to experiment log")
+    p.add_argument("--conds", nargs="*", default=None, help="Conditions to include")
+    return p.parse_args()
+
+
+args = parse_args()
+rows = [json.loads(l) for l in open(args.log, encoding="utf-8") if l.strip()]
+
+all_conds = sorted({r["condition"] for r in rows})
+conds = [c for c in args.conds if c in all_conds] if args.conds else all_conds
 
 
 # ---------------------------------------------------------------- Fisher exact

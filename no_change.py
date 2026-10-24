@@ -6,16 +6,29 @@ the IDENTICAL answer? This is distinct from repair (wrong->right) and damage
 
 Run from repo root:  python no_change.py
 """
-import json, os
+import argparse, json, os
 
-LOG = os.path.join("run_experiment_data", "log.jsonl")
-rows = [json.loads(l) for l in open(LOG, encoding="utf-8") if l.strip()]
+DEFAULT_LOG = os.path.join("run_experiment_data", "log.jsonl")
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Compute rejection without change.")
+    p.add_argument("--log", default=DEFAULT_LOG, help="Path to experiment log")
+    p.add_argument("--conds", nargs="*", default=None, help="Conditions to include")
+    return p.parse_args()
+
+
+args = parse_args()
+rows = [json.loads(l) for l in open(args.log, encoding="utf-8") if l.strip()]
+
+all_conds = sorted({r["condition"] for r in rows})
+conds = [c for c in args.conds if c in all_conds] if args.conds else all_conds
 
 print(f"{len(rows)} rows\n")
 print(f"{'cond':6} {'rejects':>8} {'no-change':>10} {'repair':>8} {'damage':>8} {'other':>7}")
 print("-" * 52)
 
-for cond in sorted({r["condition"] for r in rows}):
+for cond in conds:
     rs = [r for r in rows if r["condition"] == cond]
     rejects = [r for r in rs if r["verdict"] == "REJECT"]
     if not rejects:
