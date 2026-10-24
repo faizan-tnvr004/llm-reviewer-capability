@@ -33,7 +33,7 @@ try:
 except ImportError:
     pass
 
-EXEC_TIMEOUT = 30  # seconds per test case
+EXEC_TIMEOUT = 6.0  # seconds per test case (matching plan Task T4)
 DOCKER_IMAGE = "python:3.11-slim"
 DOCKER_MEM = "512m"
 DOCKER_CPUS = "1"
@@ -142,23 +142,26 @@ def run_program(code: str, stdin_text: str, timeout: int = EXEC_TIMEOUT
         )
 
 
-def run_tests(code: str, test_cases: List[dict], timeout: int = EXEC_TIMEOUT
-              ) -> List[dict]:
-    """Run a program against a list of test cases.
+def run_tests(code: str, test_cases: List[dict], timeout: float = EXEC_TIMEOUT,
+              outer_timeout: float = 25.0) -> List[dict]:
+    """Run a program against a list of test cases with per-test and outer timeouts.
 
     Each test_case dict has keys: input (str), expected_output (str).
     Returns a list of result dicts, one per test case:
       {passed: bool, expected: str, actual: str, kind: str, stderr_tail: str}
     kind is one of: "pass", "wrong", "crash", "timeout"
     """
+    import time
+    start_time = time.time()
     results = []
+    consecutive_timeouts = 0
+
     for tc in test_cases:
-        inp = tc["input"]
-        expected = normalize_output(tc["expected_output"])
+        inp = tc.get("input", "")
+        expected = normalize_output(tc.get("expected_output", tc.get("output", "")))
 
-        r = run_program(code, inp, timeout)
-
-        if r["timed_out"]:
+        # Outer wall-clock limit or consecutive timeout fast-fail
+        if (time.time() - start_time >= outer_timeout) or (consecutive_timeouts >= 2):
             results.append({
                 "passed": False,
                 "expected": expected,
@@ -167,6 +170,21 @@ def run_tests(code: str, test_cases: List[dict], timeout: int = EXEC_TIMEOUT
                 "stderr_tail": "",
             })
             continue
+
+        r = run_program(code, inp, int(timeout))
+
+        if r["timed_out"]:
+            consecutive_timeouts += 1
+            results.append({
+                "passed": False,
+                "expected": expected,
+                "actual": "",
+                "kind": "timeout",
+                "stderr_tail": "",
+            })
+            continue
+
+        consecutive_timeouts = 0
 
         if r["returncode"] != 0:
             stderr_tail = r["stderr"].strip().split("\n")[-5:]
