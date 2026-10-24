@@ -24,15 +24,30 @@ import os
 import subprocess
 import sys
 import tempfile
+import warnings
 from typing import List, Optional
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 EXEC_TIMEOUT = 30  # seconds per test case
 DOCKER_IMAGE = "python:3.11-slim"
 DOCKER_MEM = "512m"
 DOCKER_CPUS = "1"
 
-# Set UNSAFE_LOCAL_EXEC=1 to skip Docker and run in a local subprocess.
-_USE_LOCAL = os.environ.get("UNSAFE_LOCAL_EXEC", "").strip() in ("1", "true", "yes")
+_WARNED_LOCAL = False
+
+
+def _check_use_local() -> bool:
+    global _WARNED_LOCAL
+    use_local = os.environ.get("UNSAFE_LOCAL_EXEC", "").strip().lower() in ("1", "true", "yes")
+    if use_local and not _WARNED_LOCAL:
+        warnings.warn("UNSAFE_LOCAL_EXEC is enabled; executing programs in local subprocess without Docker isolation.")
+        _WARNED_LOCAL = True
+    return use_local
 
 
 def normalize_output(text: str) -> str:
@@ -114,9 +129,17 @@ def run_program(code: str, stdin_text: str, timeout: int = EXEC_TIMEOUT
 
     Returns dict with keys: stdout, stderr, returncode, timed_out.
     """
-    if _USE_LOCAL:
+    if _check_use_local():
         return _run_local(code, stdin_text, timeout)
-    return _run_docker(code, stdin_text, timeout)
+    try:
+        return _run_docker(code, stdin_text, timeout)
+    except FileNotFoundError:
+        # If docker binary is not installed on system and local fallback allowed
+        if _check_use_local():
+            return _run_local(code, stdin_text, timeout)
+        raise RuntimeError(
+            "Docker binary not found. Please install Docker or enable UNSAFE_LOCAL_EXEC=1 in your environment."
+        )
 
 
 def run_tests(code: str, test_cases: List[dict], timeout: int = EXEC_TIMEOUT
