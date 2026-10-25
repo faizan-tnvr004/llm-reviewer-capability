@@ -22,13 +22,16 @@ Design (per the amended plan):
 
 from __future__ import annotations
 
+import datetime
+import hashlib
 import inspect
+import json
 import re
 import time
 from typing import Callable, List, Optional
 
 from core import Task, grade_numeric
-from harness import Model, DiskCache, RunLog, call_with_retry, DailyLimitExhausted
+from harness import Model, DiskCache, RunLog, call_with_retry, DailyLimitExhausted, SandboxUnavailable, RateLimitStop
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +178,22 @@ def _is_tool_reviewer(obj) -> bool:
 # The experiment
 # ---------------------------------------------------------------------------
 
+def _extract_code_hash(task: Task, text: str) -> str:
+    """Extract code hash for grade caching.
+    For code tasks with extractable programs, returns 16-hex code hash of normalized code.
+    For responses without code or math tasks, returns sha256 of response text to prevent collision.
+    """
+    try:
+        from tasks.livecodebench_tasks import extract_program, normalize_code
+        from code_exec import code_hash
+        code = extract_program(text)
+        if code is not None:
+            return code_hash(normalize_code(code))
+    except Exception:
+        pass
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
 def run_per_experiment(tasks: List[Task],
                        executor: Model,
                        reviewer_conditions: dict,   # {"C0": None, "C1": Model, ...}
@@ -202,16 +221,40 @@ def run_per_experiment(tasks: List[Task],
       revise_prompt                          — template string with {problem}, {solution}, {critique}
       review_input_fn(task, a0_text) -> dict  — override {problem} and {solution} for review
       revise_input_fn(task, a0_text, critique) -> dict — override revise template fields
-      extra_log_fn(task, cond, a0_text, a0_grade, final_grade) -> dict — extra fields for log
+      extra_log_fn(task, cond, a0_text, a0_grade, final_grade[, final_text=...]) -> dict
+                                             — extra fields for log; final_text is passed
+                                               only if the hook declares that parameter
     """
     _grader = grader or grade_numeric
     _review_prompt = review_prompt or REVIEW_PROMPT
     _revise_prompt = revise_prompt or REVISE_PROMPT
 
+    def _cached_grade(task: Task, text: str) -> dict:
+        # Math path (grade_numeric) is graded directly, never cached, exactly as before.
+        if _grader is grade_numeric:
+            return grade_numeric(task, text)
+        ch = _extract_code_hash(task, text)
+        g_key = ("grade_cache", task.task_id, ch, 0)
+        cached_val = cache.get(*g_key)
+        if cached_val is not None:
+            try:
+                return json.loads(cached_val)
+            except Exception:
+                pass
+        grade = _grader(task, text)
+        try:
+            cache.put(*g_key, json.dumps(grade))
+        except Exception:
+            pass
+        return grade
+
     already = {(r["task_id"], r["condition"]) for r in log.load()}
     done = 0
 
     for task in tasks:
+        if all((task.task_id, cond) in already for cond in reviewer_conditions):
+            continue
+
         # ---- Stage 1: execute once, shared across conditions ----
         a0_key = ("per_execute", executor.model_id, task.task_id, 0)
         a0_text = cache.get(*a0_key)
@@ -221,7 +264,7 @@ def run_per_experiment(tasks: List[Task],
                                      task.task_id, "shared")
                 cache.put(*a0_key, a0_text)
 
-            a0_grade = _grader(task, a0_text)
+            a0_grade = _cached_grade(task, a0_text)
 
             for cond_name, reviewer in reviewer_conditions.items():
                 if (task.task_id, cond_name) in already:
@@ -290,20 +333,44 @@ def run_per_experiment(tasks: List[Task],
                         _revise_prompt.format(**fields),
                         "revise", task.task_id, cond_name)
                     cache.put(*v_key, revised_text)
-                final_grade = _grader(task, revised_text)
+                final_grade = _cached_grade(task, revised_text)
                 _log_outcome(log, task, cond_name, a0_text, a0_grade,
                              review=review, final_text=revised_text,
                              final_grade=final_grade,
                              extra_log_fn=extra_log_fn)
                 already.add((task.task_id, cond_name)); done += 1
 
-        except DailyLimitExhausted:
-            if verbose:
-                print(f"[pipeline] daily limit hit — stopping gracefully after "
-                      f"{done} new outcomes. Re-run after reset to resume.")
-            return {"completed_outcomes": done, "stopped_daily_limit": True}
+        except (DailyLimitExhausted, SandboxUnavailable, RateLimitStop) as exc:
+            raw_text = getattr(exc, "raw_error", "") or str(getattr(exc, "__cause__", None) or exc)
+            matched_marker = getattr(exc, "matched_marker", "")
+            if not matched_marker:
+                if isinstance(exc, RateLimitStop):
+                    matched_marker = "no daily marker; per-minute retries exhausted"
+                elif isinstance(exc, DailyLimitExhausted):
+                    try:
+                        from providers import find_daily_marker
+                        matched_marker = find_daily_marker(getattr(exc, "__cause__", None) or exc) or "daily"
+                    except Exception:
+                        matched_marker = "daily"
+                else:
+                    matched_marker = "sandbox unavailable"
 
-    return {"completed_outcomes": done, "stopped_daily_limit": False}
+            if verbose:
+                if isinstance(exc, (DailyLimitExhausted, RateLimitStop)):
+                    print(f"\n[pipeline] Rate limit stop triggered: {exc.__class__.__name__}")
+                    print(f"[pipeline] Matched marker: {matched_marker}")
+                    print(f"[pipeline] Raw provider error text: {raw_text}")
+                elif isinstance(exc, SandboxUnavailable):
+                    print(f"\n[pipeline] sandbox unavailable: {raw_text}")
+                print(f"[pipeline] stopping gracefully after {done} new outcomes. Re-run after reset/recovery to resume.\n")
+            return {
+                "completed_outcomes": done,
+                "stopped_daily_limit": isinstance(exc, DailyLimitExhausted),
+                "stopped_sandbox_unavailable": isinstance(exc, SandboxUnavailable),
+                "stopped_rate_limit": isinstance(exc, RateLimitStop),
+            }
+
+    return {"completed_outcomes": done, "stopped_daily_limit": False, "stopped_sandbox_unavailable": False, "stopped_rate_limit": False}
 
 
 def _log_outcome(log, task, condition, a0_text, a0_grade, review,
@@ -318,13 +385,19 @@ def _log_outcome(log, task, condition, a0_text, a0_grade, review,
         "verdict": (review or {}).get("verdict", "NONE"),
         "review_malformed": (review or {}).get("malformed", False),
         "critique": (review or {}).get("critique", "")[:500],
+        "critique_text": (review or {}).get("critique", ""),
         "final_extracted": final_grade["extracted"],
         "final_correct": final_grade["correct"],
         "revised": bool(review and review.get("verdict") == "REJECT"),
         "ts": time.time(),
+        "utc_ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
     if extra_log_fn:
-        extra = extra_log_fn(task, condition, a0_text, a0_grade, final_grade)
+        if "final_text" in inspect.signature(extra_log_fn).parameters:
+            extra = extra_log_fn(task, condition, a0_text, a0_grade, final_grade,
+                                 final_text=final_text)
+        else:
+            extra = extra_log_fn(task, condition, a0_text, a0_grade, final_grade)
         if extra:
             record.update(extra)
     log.append(record)

@@ -51,21 +51,33 @@ def get_last_usage():
     u, _LAST_USAGE = _LAST_USAGE, None
     return u
 
+def find_daily_marker(err: Exception) -> Optional[str]:
+    """Return the matched daily marker string if err is a per-day limit, else None."""
+    msg = str(err).lower()
+    daily_markers = ("per day", "requests per day", "rpd", "tpd",
+                     "per-day", "daily limit", "daily quota",
+                     "perday", "per_day", "requests_per_day", "daily")
+    for m in daily_markers:
+        if m in msg:
+            return m
+    return None
+
 def _looks_daily(err: Exception) -> bool:
     """True only for per-DAY limits. Ambiguous words like 'quota' or
     'exceeded' also appear in per-MINUTE errors, so we match only phrases
     that unambiguously mean daily."""
-    msg = str(err).lower()
-    daily_markers = ("per day", "requests per day", "rpd", "tpd",
-                     "per-day", "daily limit", "daily quota")
-    return any(m in msg for m in daily_markers)
+    return find_daily_marker(err) is not None
 
 # --- Google AI Studio (Gemini) ----------------------------------------------
 
-from google import genai
-from google.genai import errors as genai_errors
-
-_gclient = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY")) if os.environ.get("GOOGLE_API_KEY") else None
+try:
+    from google import genai
+    from google.genai import errors as genai_errors
+    _gclient = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY")) if os.environ.get("GOOGLE_API_KEY") else None
+except (ImportError, ModuleNotFoundError):
+    genai = None
+    genai_errors = None
+    _gclient = None
 
 
 def call_gemini(prompt: str) -> str:
@@ -86,18 +98,27 @@ def call_gemini(prompt: str) -> str:
     except genai_errors.APIError as e:
         code = getattr(e, "code", None)
         if code == 429 or "429" in str(e):
-            raise (DailyLimitExhausted if _looks_daily(e) else RetryableRateLimit)() from e
+            marker = find_daily_marker(e)
+            if marker:
+                raise DailyLimitExhausted(f"Daily limit marker matched: '{marker}'. Raw error: {e}",
+                                         raw_error=str(e), matched_marker=marker) from e
+            raise RetryableRateLimit(str(e)) from e
         if code in (500, 502, 503, 504) or "503" in str(e) or "UNAVAILABLE" in str(e):
-            raise RetryableRateLimit() from e   # transient server error: back off and retry
+            raise RetryableRateLimit(str(e)) from e   # transient server error: back off and retry
         raise
 
 
 # --- Groq (OpenAI-compatible; serves both open models) ----------------------
 
-from groq import Groq, APIStatusError
-from groq import RateLimitError as GroqRateLimitError
-
-_groq = Groq(api_key=os.environ.get("GROQ_API_KEY")) if os.environ.get("GROQ_API_KEY") else None
+try:
+    from groq import Groq, APIStatusError
+    from groq import RateLimitError as GroqRateLimitError
+    _groq = Groq(api_key=os.environ.get("GROQ_API_KEY")) if os.environ.get("GROQ_API_KEY") else None
+except (ImportError, ModuleNotFoundError):
+    Groq = None
+    APIStatusError = Exception
+    GroqRateLimitError = Exception
+    _groq = None
 
 
 def _call_groq(model_id: str, prompt: str, max_tokens: int = 4096) -> str:
@@ -114,10 +135,14 @@ def _call_groq(model_id: str, prompt: str, max_tokens: int = 4096) -> str:
                            "completion_tokens": resp.usage.completion_tokens}
         return resp.choices[0].message.content or ""
     except GroqRateLimitError as e:
-        raise (DailyLimitExhausted if _looks_daily(e) else RetryableRateLimit)() from e
+        marker = find_daily_marker(e)
+        if marker:
+            raise DailyLimitExhausted(f"Daily limit marker matched: '{marker}'. Raw error: {e}",
+                                     raw_error=str(e), matched_marker=marker) from e
+        raise RetryableRateLimit(str(e)) from e
     except APIStatusError as e:
         if e.status_code == 413:
-            raise RetryableRateLimit() from e
+            raise RetryableRateLimit(str(e)) from e
         raise
 def call_llama(prompt: str) -> str:
     return _call_groq(LLAMA_MODEL, prompt, max_tokens=2048)

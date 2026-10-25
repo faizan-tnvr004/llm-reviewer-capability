@@ -38,6 +38,23 @@ class RetryableRateLimit(Exception):
 
 class DailyLimitExhausted(Exception):
     """Per-day (RPD/TPD) limit: retrying is pointless until the daily reset."""
+    def __init__(self, message: str = "", raw_error: str = "", matched_marker: str = "daily"):
+        super().__init__(message or f"Daily limit exhausted: {matched_marker}. Raw error: {raw_error}")
+        self.raw_error = raw_error or message
+        self.matched_marker = matched_marker
+
+
+class SandboxUnavailable(Exception):
+    """Raised when the Docker sandbox infrastructure is unavailable or repeatedly fails."""
+
+
+class RateLimitStop(Exception):
+    """Per-minute retries exhausted (attempts or wait time bound hit): clean stop."""
+    def __init__(self, message: str = "", raw_error: str = "", matched_marker: str = "no daily marker; per-minute retries exhausted"):
+        super().__init__(message or f"Rate limit stop: {matched_marker}. Raw error: {raw_error}")
+        self.raw_error = raw_error or message
+        self.matched_marker = matched_marker
+
 
 
 # ---------------------------------------------------------------------------
@@ -94,14 +111,33 @@ class RunLog:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
 
     def append(self, record: dict) -> None:
-        with open(self.path, "a") as f:
+        needs_newline = False
+        if os.path.exists(self.path) and os.path.getsize(self.path) > 0:
+            with open(self.path, "rb") as f:
+                f.seek(-1, os.SEEK_END)
+                if f.read(1) != b"\n":
+                    needs_newline = True
+        with open(self.path, "a", encoding="utf-8") as f:
+            if needs_newline:
+                f.write("\n")
             f.write(json.dumps(record) + "\n")
 
     def load(self) -> List[dict]:
         if not os.path.exists(self.path):
             return []
-        with open(self.path) as f:
-            return [json.loads(line) for line in f if line.strip()]
+        records = []
+        with open(self.path, "r", encoding="utf-8") as f:
+            lines = [line for line in f if line.strip()]
+        for idx, line in enumerate(lines):
+            try:
+                records.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                import warnings
+                warnings.warn(
+                    f"RunLog.load: ignoring truncated final line in {self.path}: {line[:60]}... ({exc})"
+                )
+                continue
+        return records
 
 
 # ---------------------------------------------------------------------------
@@ -109,20 +145,34 @@ class RunLog:
 # ---------------------------------------------------------------------------
 
 def call_with_retry(model: Model, prompt: str,
-                    max_retries: int = 10,
+                    max_retries: int = 6,
+                    max_total_wait_s: float = 300.0,
                     base_wait: float = 2.0,
                     sleep: Callable[[float], None] = time.sleep) -> str:
     """Call the model; on RetryableRateLimit wait 2s, 4s, 8s, ... and retry.
+    Stops after max_retries (default 6) attempts or about max_total_wait_s (default 300s)
+    total waiting, whichever comes first, raising RateLimitStop.
     DailyLimitExhausted propagates immediately — the runner handles it."""
     attempt = 0
+    total_waited = 0.0
     while True:
         try:
             return model.call(prompt)
-        except RetryableRateLimit:
-            if attempt >= max_retries:
-                raise
+        except RetryableRateLimit as exc:
+            if attempt >= max_retries or total_waited >= max_total_wait_s:
+                cause_err = getattr(exc, "__cause__", None) or exc
+                raw_text = getattr(exc, "raw_error", "") or str(cause_err)
+                raise RateLimitStop(
+                    f"Rate limit retries exhausted for {model.model_id} after "
+                    f"{attempt} retries and {total_waited:.1f}s total wait.",
+                    raw_error=raw_text,
+                    matched_marker="no daily marker; per-minute retries exhausted",
+                ) from exc
             wait = base_wait * (2 ** attempt)
+            if total_waited + wait > max_total_wait_s:
+                wait = max(0.0, max_total_wait_s - total_waited)
             sleep(wait)
+            total_waited += wait
             attempt += 1
 
 
@@ -159,13 +209,22 @@ def run_single_agent(tasks: List[Task],
                 if response is None:
                     try:
                         response = call_with_retry(model, task.prompt, sleep=sleep)
-                    except DailyLimitExhausted:
+                    except (DailyLimitExhausted, RateLimitStop) as exc:
+                        raw_text = getattr(exc, "raw_error", "") or str(getattr(exc, "__cause__", None) or exc)
+                        matched_marker = getattr(exc, "matched_marker", "")
+                        if not matched_marker:
+                            if isinstance(exc, RateLimitStop):
+                                matched_marker = "no daily marker; per-minute retries exhausted"
+                            else:
+                                matched_marker = "daily"
                         if verbose:
-                            print(f"[harness] daily limit hit on {model.model_id} "
-                                  f"after {made} new calls — stopping gracefully. "
-                                  f"Re-run after the daily reset to resume.")
+                            print(f"\n[harness] Rate limit stop triggered: {exc.__class__.__name__}")
+                            print(f"[harness] Matched marker: {matched_marker}")
+                            print(f"[harness] Raw provider error text: {raw_text}")
+                            print(f"[harness] Stopping gracefully on {model.model_id} after {made} new calls.")
                         return {"made": made, "cache_hits": hits, "logged": logged,
-                                "stopped_daily_limit": True}
+                                "stopped_daily_limit": isinstance(exc, DailyLimitExhausted),
+                                "stopped_rate_limit": isinstance(exc, RateLimitStop)}
                     cache.put(*key, response)
                     made += 1
                 else:

@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from core import Task
 from prompts_code import CODE_ANSWER_INSTRUCTION
-from code_exec import run_tests, normalize_output, code_hash
+from code_exec import run_tests, normalize_output, code_hash, ast_hash
 
 SPECIAL_JUDGE_PHRASES = (
     "any of them",
@@ -210,41 +210,47 @@ def grade_lcb(task: Task, response: str) -> dict:
       correct     : bool
       fingerprint : str — "PASS" | "FAIL:k/n" | "TIMEOUT" | "CRASH" | "NO_CODE"
       extracted   : Optional[str] — 16-char hex hash of normalized code, or None
+      ast_hash    : Optional[str] — 16-char hex hash of normalized AST, or None
     """
     code = extract_program(response)
     if code is None:
-        return {"correct": False, "fingerprint": "NO_CODE", "extracted": None}
+        return {"correct": False, "fingerprint": "NO_CODE", "extracted": None, "ast_hash": None, "tests_run": 0, "max_test_wall_s": 0.0, "infra_retries": 0}
 
     norm_code = normalize_code(code)
     chash = code_hash(norm_code)
+    ahash = ast_hash(norm_code)
     test_cases = task.meta.get("hidden_tests", task.meta.get("test_cases", []))
 
     if not test_cases:
-        return {"correct": True, "fingerprint": "PASS", "extracted": chash}
+        return {"correct": True, "fingerprint": "PASS", "extracted": chash, "ast_hash": ahash, "tests_run": 0, "max_test_wall_s": 0.0, "infra_retries": 0}
 
     results = run_tests(code, test_cases)
     if not results:
-        return {"correct": False, "fingerprint": "CRASH", "extracted": chash}
+        return {"correct": False, "fingerprint": "CRASH", "extracted": chash, "ast_hash": ahash, "tests_run": 0, "max_test_wall_s": 0.0, "infra_retries": 0}
 
-    n_total = len(results)
-    n_pass = sum(1 for r in results if r["passed"])
-    n_timeout = sum(1 for r in results if r["kind"] == "timeout")
-    n_crash = sum(1 for r in results if r["kind"] == "crash")
+    n_total = len(test_cases)
+    k = len(results)
+    last = results[-1]
+    max_test_wall_s = max((r.get("wall_s", 0.0) for r in results), default=0.0)
+    total_infra_retries = sum(r.get("infra_retries", 0) for r in results)
 
-    if n_pass == n_total:
-        return {"correct": True, "fingerprint": "PASS", "extracted": chash}
+    if k == n_total and all(r["passed"] for r in results):
+        return {"correct": True, "fingerprint": "PASS", "extracted": chash, "ast_hash": ahash, "tests_run": k, "max_test_wall_s": round(max_test_wall_s, 3), "infra_retries": total_infra_retries}
 
-    if n_timeout > 0 and n_pass == 0:
-        return {"correct": False, "fingerprint": "TIMEOUT", "extracted": chash}
+    if last["kind"] == "timeout":
+        return {"correct": False, "fingerprint": "TIMEOUT", "extracted": chash, "ast_hash": ahash, "tests_run": k, "max_test_wall_s": round(max_test_wall_s, 3), "infra_retries": total_infra_retries}
 
-    if n_crash > 0 and n_pass == 0:
-        return {"correct": False, "fingerprint": "CRASH", "extracted": chash}
+    if last["kind"] == "crash":
+        return {"correct": False, "fingerprint": "CRASH", "extracted": chash, "ast_hash": ahash, "tests_run": k, "max_test_wall_s": round(max_test_wall_s, 3), "infra_retries": total_infra_retries}
 
-    n_fail = n_total - n_pass
     return {
         "correct": False,
-        "fingerprint": f"FAIL:{n_fail}/{n_total}",
+        "fingerprint": f"FAIL:{k}/{n_total}",
         "extracted": chash,
+        "ast_hash": ahash,
+        "tests_run": k,
+        "max_test_wall_s": round(max_test_wall_s, 3),
+        "infra_retries": total_infra_retries,
     }
 
 

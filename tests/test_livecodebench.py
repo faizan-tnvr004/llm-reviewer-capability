@@ -194,3 +194,55 @@ def test_normalize_code():
     raw = "def foo():   \r\n    return 42  \r\n\r\n"
     norm = normalize_code(raw)
     assert norm == "def foo():\n    return 42"
+
+
+def test_grade_lcb_fail_fingerprint_semantics(monkeypatch):
+    """Verify that for every FAIL:k/n:
+    - n == len(hidden_tests) (TOTAL hidden tests)
+    - tests_run == k (1-indexed first failing test)
+    """
+    from unittest.mock import patch
+
+    # Mock Task with 5 hidden tests
+    hidden_tests = [
+        {"input": f"{i}", "expected_output": f"{i}", "output": f"{i}", "testtype": "stdin"}
+        for i in range(1, 6)
+    ]
+    task = Task(
+        task_id="test_semantics_p1",
+        family="code_lcb",
+        prompt="Solve problem",
+        ground_truth="PASS",
+        meta={"hidden_tests": hidden_tests},
+    )
+
+    # Case 1: First test fails immediately (k=1)
+    with patch("tasks.livecodebench_tasks.run_tests") as mock_run:
+        mock_run.return_value = [
+            {"passed": False, "expected": "1", "actual": "wrong", "kind": "wrong", "stderr_tail": ""}
+        ]
+        grade = grade_lcb(task, "```python\nprint(0)\n```")
+        assert not grade["correct"]
+        assert grade["fingerprint"] == "FAIL:1/5"
+        assert grade["tests_run"] == 1
+        fp_parts = grade["fingerprint"].split(":")[-1].split("/")
+        k, n = int(fp_parts[0]), int(fp_parts[1])
+        assert n == len(hidden_tests)
+        assert grade["tests_run"] == k
+
+    # Case 2: Tests 1, 2 pass; test 3 fails (k=3)
+    with patch("tasks.livecodebench_tasks.run_tests") as mock_run:
+        mock_run.return_value = [
+            {"passed": True, "expected": "1", "actual": "1", "kind": "pass", "stderr_tail": ""},
+            {"passed": True, "expected": "2", "actual": "2", "kind": "pass", "stderr_tail": ""},
+            {"passed": False, "expected": "3", "actual": "wrong", "kind": "wrong", "stderr_tail": ""},
+        ]
+        grade = grade_lcb(task, "```python\nprint(x)\n```")
+        assert not grade["correct"]
+        assert grade["fingerprint"] == "FAIL:3/5"
+        assert grade["tests_run"] == 3
+        fp_parts = grade["fingerprint"].split(":")[-1].split("/")
+        k, n = int(fp_parts[0]), int(fp_parts[1])
+        assert n == len(hidden_tests)
+        assert grade["tests_run"] == k
+

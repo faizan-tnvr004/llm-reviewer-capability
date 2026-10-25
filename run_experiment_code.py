@@ -23,6 +23,7 @@ Modes:
 from __future__ import annotations
 
 import argparse
+import atexit
 from collections import Counter
 import json
 import os
@@ -41,10 +42,14 @@ from prompts_code import (
     CODE_ANSWER_INSTRUCTION,
 )
 from test_reviewer import PublicTestReviewer
-from code_exec import code_hash
+from code_exec import code_hash, cleanup_stale_containers
 from harness import DiskCache, RunLog, Model
 from pipeline import run_per_experiment, analyze, TokenMeter
-from providers import experimental_models, get_last_usage
+try:
+    from providers import experimental_models, get_last_usage
+except (ImportError, ModuleNotFoundError):
+    experimental_models = None
+    get_last_usage = None
 
 # Top-level specification constants (from plan Section 6 Task T9)
 N_TASKS = 100
@@ -81,35 +86,74 @@ def code_revise_input(task, a0_text, critique):
     return {"problem": task.prompt, "solution": solution, "critique": critique}
 
 
-def extra_code_log(task, condition, a0_text, a0_grade, final_grade):
-    """Extra log fields per outcome matching Task T9 specification:
-    a0_fingerprint, final_fingerprint, a0_code_hash, final_code_hash,
-    a0_public_pass, final_public_pass, review_retried.
-    """
-    a0_code = extract_program(a0_text)
-    a0_pub_pass = public_check(task, a0_code)["all_pass"] if a0_code else False
+def make_extra_code_log(programs_log_path: str = os.path.join(RUN_DIR, "programs.jsonl")):
+    """Factory for extra_code_log with a configurable programs.jsonl path."""
+    def _extra_log_fn(task, condition, a0_text, a0_grade, final_grade, final_text=None):
+        a0_code = extract_program(a0_text)
+        a0_pub_pass = public_check(task, a0_code)["all_pass"] if a0_code else False
+        final_code = extract_program(final_text) if final_text is not None else a0_code
 
-    # For final_public_pass: if final passes hidden tests, public tests always pass
-    if final_grade.get("correct"):
-        final_pub_pass = True
-    elif condition == "C0":
-        final_pub_pass = a0_pub_pass
-    else:
-        final_pub_pass = a0_pub_pass
+        # final_public_pass: a program passing every hidden test passes the samples;
+        # an unchanged program inherits A0's result; otherwise run the samples.
+        if final_grade.get("correct"):
+            final_pub_pass = True
+        elif final_grade.get("extracted") == a0_grade.get("extracted"):
+            final_pub_pass = a0_pub_pass
+        else:
+            final_pub_pass = public_check(task, final_code)["all_pass"] if final_code else False
 
-    return {
-        "family": "livecodebench",
-        "question_id": task.meta.get("question_id", ""),
-        "difficulty": task.meta.get("difficulty", ""),
-        "contest_date": task.meta.get("contest_date", ""),
-        "a0_fingerprint": a0_grade.get("fingerprint", ""),
-        "final_fingerprint": final_grade.get("fingerprint", ""),
-        "a0_code_hash": a0_grade.get("extracted"),
-        "final_code_hash": final_grade.get("extracted"),
-        "a0_public_pass": a0_pub_pass,
-        "final_public_pass": final_pub_pass,
-        "review_retried": False,
-    }
+        # Log to programs.jsonl
+        try:
+            os.makedirs(os.path.dirname(programs_log_path) or ".", exist_ok=True)
+            with open(programs_log_path, "a", encoding="utf-8") as pf:
+                entry = {
+                    "task_id": task.task_id,
+                    "condition": condition,
+                    "stage": "final",
+                    "a0_code": a0_code,
+                    "final_code": final_code,
+                    "a0_fingerprint": a0_grade.get("fingerprint", ""),
+                    "final_fingerprint": final_grade.get("fingerprint", ""),
+                    "a0_code_hash": a0_grade.get("extracted"),
+                    "a0_ast_hash": a0_grade.get("ast_hash"),
+                    "final_code_hash": final_grade.get("extracted"),
+                    "final_ast_hash": final_grade.get("ast_hash"),
+                    "a0_max_test_wall_s": a0_grade.get("max_test_wall_s", 0.0),
+                    "final_max_test_wall_s": final_grade.get("max_test_wall_s", 0.0),
+                    "max_test_wall_s": final_grade.get("max_test_wall_s", 0.0),
+                    "a0_infra_retries": a0_grade.get("infra_retries", 0),
+                    "final_infra_retries": final_grade.get("infra_retries", 0),
+                    "infra_retries": final_grade.get("infra_retries", 0),
+                    "ts": time.time(),
+                }
+                pf.write(json.dumps(entry) + "\n")
+        except Exception:
+            pass
+
+        return {
+            "family": "livecodebench",
+            "question_id": task.meta.get("question_id", ""),
+            "difficulty": task.meta.get("difficulty", ""),
+            "contest_date": task.meta.get("contest_date", ""),
+            "a0_fingerprint": a0_grade.get("fingerprint", ""),
+            "final_fingerprint": final_grade.get("fingerprint", ""),
+            "a0_code_hash": a0_grade.get("extracted"),
+            "final_code_hash": final_grade.get("extracted"),
+            "a0_ast_hash": a0_grade.get("ast_hash"),
+            "final_ast_hash": final_grade.get("ast_hash"),
+            "a0_max_test_wall_s": a0_grade.get("max_test_wall_s", 0.0),
+            "final_max_test_wall_s": final_grade.get("max_test_wall_s", 0.0),
+            "max_test_wall_s": final_grade.get("max_test_wall_s", 0.0),
+            "a0_infra_retries": a0_grade.get("infra_retries", 0),
+            "final_infra_retries": final_grade.get("infra_retries", 0),
+            "infra_retries": final_grade.get("infra_retries", 0),
+            "a0_public_pass": a0_pub_pass,
+            "final_public_pass": final_pub_pass,
+            "review_retried": False,
+        }
+    return _extra_log_fn
+
+extra_code_log = make_extra_code_log()
 
 
 # ---------------------------------------------------------------------------
@@ -149,8 +193,9 @@ def wrap_throttled_model(base_model: Model, min_interval_s: float = GPTOSS_MIN_I
 # ---------------------------------------------------------------------------
 
 def run_calibration(n: int, difficulties: list[str], date_from: str | None,
-                    date_to: str | None, seed: int, batch_idx: int = 1):
-    calib_dir = os.path.join(RUN_DIR, "calibration")
+                    date_to: str | None, seed: int, batch_idx: int = 1,
+                    run_dir: str = RUN_DIR):
+    calib_dir = os.path.join(run_dir, "calibration")
     os.makedirs(calib_dir, exist_ok=True)
     batch_file = os.path.join(calib_dir, f"batch_{batch_idx}.json")
 
@@ -166,7 +211,7 @@ def run_calibration(n: int, difficulties: list[str], date_from: str | None,
         date_from=date_from,
         date_to=date_to,
         seed=seed,
-        raw_dir=os.path.join(RUN_DIR, "raw"),
+        raw_dir=os.path.join(run_dir, "raw"),
     )
     if len(tasks) < n:
         print(f"Warning: Only {len(tasks)} candidate problems found matching filter (requested {n})")
@@ -174,9 +219,10 @@ def run_calibration(n: int, difficulties: list[str], date_from: str | None,
     models = {m.model_id: m for m in experimental_models()}
     gemini = next(m for mid, m in models.items() if "gemini" in mid)
 
-    calib_cache = DiskCache(os.path.join(RUN_DIR, "calibration_cache"))
+    calib_cache = DiskCache(os.path.join(run_dir, "calibration_cache"))
     calib_log = RunLog(os.path.join(calib_dir, f"log_batch_{batch_idx}.jsonl"))
     meter = TokenMeter(usage_hook=get_last_usage)
+    calib_extra_log = make_extra_code_log(os.path.join(run_dir, "calibration_programs.jsonl"))
 
     summary = run_per_experiment(
         tasks, gemini, {"C0": None},
@@ -186,7 +232,7 @@ def run_calibration(n: int, difficulties: list[str], date_from: str | None,
         revise_prompt=CODE_REVISE_PROMPT,
         review_input_fn=code_review_input,
         revise_input_fn=code_revise_input,
-        extra_log_fn=extra_code_log,
+        extra_log_fn=calib_extra_log,
     )
 
     rows = calib_log.load()
@@ -243,7 +289,7 @@ def run_calibration(n: int, difficulties: list[str], date_from: str | None,
     print(f"Saved batch details to {batch_file}")
 
     # Update or create CALIBRATION.md
-    calib_md_path = os.path.join(RUN_DIR, "CALIBRATION.md")
+    calib_md_path = os.path.join(run_dir, "CALIBRATION.md")
     md_header = (
         "# LiveCodeBench Calibration Log\n\n"
         "Target executor accuracy: **40% – 60%** on Gemini 3.1 Flash-Lite.\n\n"
@@ -274,14 +320,174 @@ def run_calibration(n: int, difficulties: list[str], date_from: str | None,
 # ---------------------------------------------------------------------------
 
 def is_git_clean() -> bool:
+    """Fail closed: any exception or error running git status means refuse to start."""
     try:
         res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         # Untracked calibration / scratch files don't violate clean committed state of code
         # But tracked files must have no uncommitted modifications
         lines = [l for l in res.stdout.strip().split("\n") if l.strip() and not l.startswith("??")]
         return len(lines) == 0
-    except Exception:
+    except Exception as e:
+        print(f"ERROR: git status check failed ({e}) — refusing to start (fail-closed).")
+        return False
+
+
+def append_run_manifest(manifest_path: str | None = None, ids_file: str | None = None,
+                        run_dir: str = RUN_DIR) -> dict:
+    """At every start, including resumes, append to run_code_data/run_manifest.json:
+    UTC time, git rev-parse HEAD, git describe --tags --always, git status --porcelain,
+    prompts_hash(), sha256 of problem_ids.json and the docker image digest in use.
+    Append, never overwrite.
+    """
+    import datetime
+    import hashlib
+    from code_exec import DOCKER_IMAGE
+
+    if manifest_path is None:
+        manifest_path = os.path.join(run_dir, "run_manifest.json")
+    if ids_file is None:
+        ids_file = os.path.join(run_dir, "problem_ids.json")
+
+    utc_time = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    rev = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
+    describe = subprocess.run(["git", "describe", "--tags", "--always"], capture_output=True, text=True, check=False).stdout.strip()
+    status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False).stdout.strip()
+    p_hash = prompts_hash()
+
+    prob_sha = ""
+    if os.path.exists(ids_file):
+        with open(ids_file, "rb") as f:
+            prob_sha = hashlib.sha256(f.read()).hexdigest()
+
+    record = {
+        "utc_time": utc_time,
+        "git_commit": rev,
+        "git_rev_parse_head": rev,
+        "git_describe": describe,
+        "git_status_porcelain": status,
+        "prompts_hash": p_hash,
+        "problem_ids_sha256": prob_sha,
+        "docker_image": DOCKER_IMAGE,
+        "docker_image_digest": DOCKER_IMAGE,
+    }
+
+    entries = []
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content:
+                    loaded = json.loads(content)
+                    entries = loaded if isinstance(loaded, list) else [loaded]
+        except Exception:
+            entries = []
+
+    entries.append(record)
+    parent_dir = os.path.dirname(manifest_path)
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(entries, f, indent=2)
+
+    return record
+
+
+# ---------------------------------------------------------------------------
+# Runner Lock & Process Liveness
+# ---------------------------------------------------------------------------
+
+def is_pid_alive(pid: int) -> bool:
+    """Return True if a process with `pid` is currently running."""
+    if pid <= 0:
+        return False
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        SYNCHRONIZE = 0x00100000
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, pid)
+        if not handle:
+            err = kernel32.GetLastError()
+            if err == 5:  # ERROR_ACCESS_DENIED: process exists but cannot be inspected
+                return True
+            return False
+        STILL_ACTIVE = 259
+        exit_code = ctypes.c_ulong()
+        success = kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code))
+        kernel32.CloseHandle(handle)
+        return bool(success and exit_code.value == STILL_ACTIVE)
+    else:
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            return False
         return True
+
+
+class RunnerLock:
+    def __init__(self, lock_path: str):
+        self.lock_path = lock_path
+        self.acquired = False
+
+    def acquire(self) -> bool:
+        parent = os.path.dirname(self.lock_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+
+        if os.path.exists(self.lock_path):
+            existing_pid = None
+            try:
+                with open(self.lock_path, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                if content:
+                    existing_pid = int(content)
+            except Exception:
+                existing_pid = None
+
+            if existing_pid is not None and is_pid_alive(existing_pid):
+                return False  # Existing runner is active: refuse to start
+
+            # Stale lock: dead PID or invalid content
+            try:
+                os.remove(self.lock_path)
+            except OSError:
+                pass
+
+        my_pid = os.getpid()
+        tmp_path = f"{self.lock_path}.{my_pid}.tmp"
+        try:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(f"{my_pid}\n")
+            os.replace(tmp_path, self.lock_path)
+            self.acquired = True
+            return True
+        except Exception:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+            return False
+
+    def release(self):
+        if self.acquired:
+            try:
+                if os.path.exists(self.lock_path):
+                    with open(self.lock_path, "r", encoding="utf-8") as f:
+                        content = f.read().strip()
+                    if content == str(os.getpid()):
+                        os.remove(self.lock_path)
+            except OSError:
+                pass
+            self.acquired = False
+
+    def __enter__(self):
+        if not self.acquire():
+            raise RuntimeError(f"Another runner is active (lock file: {self.lock_path})")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
 
 
 # ---------------------------------------------------------------------------
@@ -304,9 +510,15 @@ def main():
                         help="RNG seed for task selection")
     parser.add_argument("--n", type=int, default=N_TASKS,
                         help="Number of tasks for the main run")
+    parser.add_argument("--run-dir", default=RUN_DIR,
+                        help=f"Directory for run artifacts, logs, cache (default: {RUN_DIR})")
+    parser.add_argument("--ids-file", default=None,
+                        help="Path to problem IDs JSON file (default: <run-dir>/problem_ids.json)")
     args = parser.parse_args()
 
-    os.makedirs(RUN_DIR, exist_ok=True)
+    run_dir = args.run_dir
+    ids_file = args.ids_file or os.path.join(run_dir, "problem_ids.json")
+    os.makedirs(run_dir, exist_ok=True)
 
     # ---- Mode 1: Calibration ----
     if args.calibrate > 0:
@@ -317,12 +529,13 @@ def main():
             date_to=args.date_to,
             seed=args.seed,
             batch_idx=args.batch,
+            run_dir=run_dir,
         )
         return
 
     # ---- Mode 2: Main experiment ----
-    if not os.path.exists(PROBLEM_IDS_FILE):
-        print(f"ERROR: Main experiment refuses to start because {PROBLEM_IDS_FILE} does not exist.")
+    if not os.path.exists(ids_file):
+        print(f"ERROR: Main experiment refuses to start because {ids_file} does not exist.")
         print("Pre-registration commit (Task T14) must exist before running main experiment.")
         sys.exit(1)
 
@@ -331,55 +544,79 @@ def main():
         print("Commit all code before starting the main experiment.")
         sys.exit(1)
 
-    print(f"Loading pre-registered problem IDs from {PROBLEM_IDS_FILE}")
-    problem_ids = load_problem_ids(PROBLEM_IDS_FILE)
-    tasks = load_lcb_tasks(
-        problem_ids=problem_ids,
-        raw_dir=os.path.join(RUN_DIR, "raw"),
-    )
-    print(f"Loaded {len(tasks)} pre-registered tasks")
+    lock = RunnerLock(os.path.join(run_dir, ".runner.lock"))
+    if not lock.acquire():
+        print(f"ERROR: Another runner is active (lock file: {lock.lock_path}). Refusing to start.")
+        sys.exit(1)
 
-    models = {m.model_id: m for m in experimental_models()}
-    gemini = next(m for mid, m in models.items() if "gemini" in mid)
-    gptoss = next(m for mid, m in models.items() if "gpt-oss" in mid)
-    llama = next(m for mid, m in models.items() if "llama" in mid)
+    atexit.register(lock.release)
 
-    # Wrap gpt-oss with throttling and empty retry
-    throttled_gptoss = wrap_throttled_model(gptoss, min_interval_s=GPTOSS_MIN_INTERVAL_S,
-                                           retry_empty=RETRY_EMPTY_REVIEW)
+    try:
+        manifest_entry = append_run_manifest(
+            manifest_path=os.path.join(run_dir, "run_manifest.json"),
+            ids_file=ids_file,
+            run_dir=run_dir,
+        )
+        print(f"Recorded run manifest entry (UTC {manifest_entry['utc_time']}, commit {manifest_entry['git_commit'][:8]})")
 
-    reviewer_conditions = {
-        "C0": None,                   # no review (baseline)
-        "C1": gemini,                 # self-review
-        "C2": throttled_gptoss,       # mid-tier cross-family (throttled)
-        "C3": llama,                  # weak reviewer
-        "C4": PublicTestReviewer(),   # public-test feedback (deterministic)
-    }
+        print("Running startup sweep for stale code_exec_* Docker containers...")
+        n_swept = cleanup_stale_containers()
+        if n_swept == 0:
+            print("Startup sweep clean: 0 stale containers found.")
 
-    cache = DiskCache(os.path.join(RUN_DIR, "cache"))
-    log = RunLog(os.path.join(RUN_DIR, "log.jsonl"))
-    meter = TokenMeter(usage_hook=get_last_usage)
+        print(f"Loading pre-registered problem IDs from {ids_file}")
+        problem_ids = load_problem_ids(ids_file)
+        tasks = load_lcb_tasks(
+            problem_ids=problem_ids,
+            raw_dir=os.path.join(run_dir, "raw"),
+        )
+        print(f"Loaded {len(tasks)} pre-registered tasks")
 
-    print(f"\nCode PER experiment: {len(tasks)} tasks x {len(reviewer_conditions)} conditions")
-    print(f"Executor: {gemini.model_id}")
-    print(f"Prompts hash: {prompts_hash()}\n")
+        models = {m.model_id: m for m in experimental_models()}
+        gemini = next(m for mid, m in models.items() if "gemini" in mid)
+        gptoss = next(m for mid, m in models.items() if "gpt-oss" in mid)
+        llama = next(m for mid, m in models.items() if "llama" in mid)
 
-    summary = run_per_experiment(
-        tasks, gemini, reviewer_conditions,
-        cache, log, meter,
-        grader=grade_lcb,
-        review_prompt=CODE_REVIEW_PROMPT,
-        revise_prompt=CODE_REVISE_PROMPT,
-        review_input_fn=code_review_input,
-        revise_input_fn=code_revise_input,
-        extra_log_fn=extra_code_log,
-    )
-    print(f"\nRun summary: {summary}")
+        # Wrap gpt-oss with throttling and empty retry
+        throttled_gptoss = wrap_throttled_model(gptoss, min_interval_s=GPTOSS_MIN_INTERVAL_S,
+                                               retry_empty=RETRY_EMPTY_REVIEW)
 
-    tok_path = os.path.join(RUN_DIR, "tokens.jsonl")
-    with open(tok_path, "a", encoding="utf-8") as f:
-        for t in meter.records:
-            f.write(json.dumps(t) + "\n")
+        reviewer_conditions = {
+            "C0": None,                   # no review (baseline)
+            "C1": gemini,                 # self-review
+            "C2": throttled_gptoss,       # mid-tier cross-family (throttled)
+            "C3": llama,                  # weak reviewer
+            "C4": PublicTestReviewer(),   # public-test feedback (deterministic)
+        }
+
+        cache = DiskCache(os.path.join(run_dir, "cache"))
+        log = RunLog(os.path.join(run_dir, "log.jsonl"))
+        meter = TokenMeter(usage_hook=get_last_usage)
+        programs_path = os.path.join(run_dir, "programs.jsonl")
+        extra_log = make_extra_code_log(programs_path)
+
+        print(f"\nCode PER experiment: {len(tasks)} tasks x {len(reviewer_conditions)} conditions")
+        print(f"Executor: {gemini.model_id}")
+        print(f"Prompts hash: {prompts_hash()}\n")
+
+        summary = run_per_experiment(
+            tasks, gemini, reviewer_conditions,
+            cache, log, meter,
+            grader=grade_lcb,
+            review_prompt=CODE_REVIEW_PROMPT,
+            revise_prompt=CODE_REVISE_PROMPT,
+            review_input_fn=code_review_input,
+            revise_input_fn=code_revise_input,
+            extra_log_fn=extra_log,
+        )
+        print(f"\nRun summary: {summary}")
+
+        tok_path = os.path.join(run_dir, "tokens.jsonl")
+        with open(tok_path, "a", encoding="utf-8") as f:
+            for t in meter.records:
+                f.write(json.dumps(t) + "\n")
+    finally:
+        lock.release()
 
 
 if __name__ == "__main__":

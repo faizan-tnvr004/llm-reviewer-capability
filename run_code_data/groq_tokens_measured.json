@@ -1,0 +1,60 @@
+{
+  "offline_estimates": {
+    "min": 572,
+    "median": 843,
+    "mean": 876.6,
+    "max": 1419
+  },
+  "top5_real_calls": [
+    {
+      "task_id": "abc400_d",
+      "difficulty": "medium",
+      "prompt_tokens": 1709,
+      "completion_tokens": 153,
+      "reasoning_tokens": 78,
+      "empty": false,
+      "wall_time": 0.7497320000002219,
+      "content_preview": "VERDICT: REJECT CRITIQUE: The code reads a graph with n nodes and m edges, not a grid, and computes a shortest cycle inv"
+    },
+    {
+      "task_id": "arc188_c",
+      "difficulty": "hard",
+      "prompt_tokens": 1519,
+      "completion_tokens": 206,
+      "reasoning_tokens": 129,
+      "empty": false,
+      "wall_time": 1.1273335999976553,
+      "content_preview": "VERDICT: REJECT   CRITIQUE: The code ignores the testimony type (C_i), the honesty/liar/confused logic, and the problem\u2019"
+    },
+    {
+      "task_id": "abc382_f",
+      "difficulty": "hard",
+      "prompt_tokens": 1817,
+      "completion_tokens": 131,
+      "reasoning_tokens": 71,
+      "empty": false,
+      "wall_time": 0.6682576999992307,
+      "content_preview": "VERDICT: REJECT CRITIQUE: The code attempts to solve a graph cycle problem, not the falling bars problem described. It r"
+    },
+    {
+      "task_id": "arc190_c",
+      "difficulty": "hard",
+      "prompt_tokens": 1893,
+      "completion_tokens": 218,
+      "reasoning_tokens": 146,
+      "empty": false,
+      "wall_time": 0.9299802000023192,
+      "content_preview": "VERDICT: REJECT CRITIQUE: The program reads a graph with edges and computes the shortest cycle, which has nothing to do "
+    },
+    {
+      "task_id": "abc384_c",
+      "difficulty": "medium",
+      "prompt_tokens": 1379,
+      "completion_tokens": 125,
+      "reasoning_tokens": 61,
+      "empty": false,
+      "wall_time": 1.2944000999996206,
+      "content_preview": "VERDICT: REJECT CRITIQUE: The provided code solves a graph cycle detection problem, not the contest scoring problem desc"
+    }
+  ]
+}
