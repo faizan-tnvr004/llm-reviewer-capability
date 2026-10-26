@@ -129,5 +129,9 @@ record of the project's methodological trajectory.
   number-theory and combinatorics.
 - **Single difficulty band** (Omni-MATH difficulty 5–6).
 - **Free-tier provider constraints.** Daily rate limits necessitated
-  multi-day runs; the 8 000 TPM cap on Groq caused 29% of GPT-OSS reviews
-  to return empty (conservatively scored as ACCEPT).
+  multi-day runs. In the reported N = 100 run (`run_experiment_data/log.jsonl`),
+  16 of 100 GPT-OSS (C2) reviews were empty or unparseable and were
+  conservatively scored as ACCEPT (`review_malformed = true`); C1 and C3 had
+  none. The 29% empty rate mentioned in `ANALYSIS_PLAN_AMENDMENT.md` §9 came
+  from the earlier run, before reviewer input was truncated to fit Groq's
+  8 000 TPM cap; every review was regenerated after that change.
