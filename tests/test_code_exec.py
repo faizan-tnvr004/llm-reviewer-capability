@@ -317,3 +317,59 @@ def run():
 if __name__ == "__main__":
     run()
 
+
+
+def _fake_proc(returncode, stdout="", stderr=""):
+    return MagicMock(returncode=returncode, stdout=stdout, stderr=stderr)
+
+
+DAEMON_DOWN_29X = ("failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; "
+                   "check if the path is correct and if the daemon is running: open "
+                   "//./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.")
+
+
+def test_docker_29x_daemon_down_message_is_infra_not_crash():
+    """Docker CLI 29.x exits 1 with 'failed to connect to the docker API' when the
+    daemon is down; that must raise SandboxUnavailable, never score CRASH."""
+    import code_exec
+    assert code_exec._is_infra_error(1, DAEMON_DOWN_29X)
+    task = Task(task_id="daemon_down", family="code_lcb", prompt="p", ground_truth="PASS",
+                meta={"hidden_tests": [{"input": "1", "expected_output": "1"}]})
+    with patch("code_exec.is_docker_available", return_value=True), \
+         patch("code_exec.subprocess.run", return_value=_fake_proc(1, stderr=DAEMON_DOWN_29X)), \
+         patch("time.sleep"):
+        with pytest.raises(SandboxUnavailable):
+            grade_lcb(task, "```python\nprint(1)\n```")
+
+
+def test_nonzero_exit_with_unknown_message_and_dead_daemon_is_infra():
+    """An unrecognised docker error is still infrastructure if the daemon does not answer."""
+    import code_exec
+    with patch("code_exec.is_docker_available", return_value=True), \
+         patch("code_exec.subprocess.run", return_value=_fake_proc(1, stderr="some new docker wording")), \
+         patch("code_exec._docker_daemon_alive", return_value=False), \
+         patch("time.sleep"):
+        with pytest.raises(SandboxUnavailable):
+            code_exec._run_docker("print(1)", "")
+
+
+def test_program_crash_with_live_daemon_is_still_a_crash():
+    """A real Python traceback with a live daemon is returned as the program's result."""
+    import code_exec
+    tb = "Traceback (most recent call last):\n  File \"solution.py\", line 1\nZeroDivisionError: division by zero"
+    with patch("code_exec.is_docker_available", return_value=True), \
+         patch("code_exec.subprocess.run", return_value=_fake_proc(1, stderr=tb)), \
+         patch("code_exec._docker_daemon_alive", return_value=True):
+        res = code_exec._run_docker("print(1/0)", "")
+    assert res["returncode"] == 1 and "ZeroDivisionError" in res["stderr"] and res["infra_retries"] == 0
+
+
+def test_sandbox_preflight_reports_dead_daemon_and_missing_image():
+    import code_exec
+    with patch("code_exec.is_docker_available", return_value=True), \
+         patch("code_exec._docker_daemon_alive", return_value=False):
+        assert code_exec.sandbox_preflight() == ["Docker daemon is not running (start Docker Desktop)"]
+    with patch("code_exec.is_docker_available", return_value=True), \
+         patch("code_exec._docker_daemon_alive", return_value=True), \
+         patch("code_exec.subprocess.run", return_value=_fake_proc(1, stderr="No such image")):
+        assert "is not present locally" in code_exec.sandbox_preflight()[0]

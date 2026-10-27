@@ -1340,3 +1340,141 @@ def test_extra_code_log_records_final_program_and_its_public_result(monkeypatch)
         assert checked == ["print(\"orig\")", "print(\"fixed\")"]
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def test_preflight_reports_missing_keys_without_network(monkeypatch):
+    """Preflight lists every missing key and skips host checks it cannot make."""
+    import providers
+    for var in ("GOOGLE_API_KEY", "GROQ_API_KEY", "DEEPINFRA_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+
+    def no_network(*a, **k):
+        raise AssertionError("preflight must not contact a host without its key")
+    import httpx
+    monkeypatch.setattr(httpx, "get", no_network)
+
+    problems = providers.preflight_code_providers()
+    for var in ("GOOGLE_API_KEY", "GROQ_API_KEY", "DEEPINFRA_API_KEY"):
+        assert f"{var} is not set" in problems
+
+
+def test_missing_sdk_is_reported_as_missing_sdk_not_missing_key(monkeypatch):
+    """A missing google-genai SDK must not be reported as a missing API key."""
+    import providers
+    monkeypatch.setattr(providers, "_GENAI_IMPORT_ERROR", ModuleNotFoundError("No module named 'google.genai'"))
+    with pytest.raises(RuntimeError, match="google-genai SDK is not installed"):
+        providers.call_gemini("hello")
+
+
+def test_code_models_use_deepinfra_llama_and_leave_math_models_unchanged():
+    """C3 in the code study is Llama 3.1 8B Instruct on DeepInfra; the math
+    study's model list still names the original Groq model."""
+    import providers
+    code_ids = [m.model_id for m in providers.code_experimental_models()]
+    math_ids = [m.model_id for m in providers.experimental_models()]
+    assert code_ids == ["gemini-3.1-flash-lite", "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo", "openai/gpt-oss-20b"]
+    assert math_ids == ["gemini-3.1-flash-lite", "llama-3.1-8b-instant", "openai/gpt-oss-20b"]
+
+
+def test_empty_review_retry_is_recorded_and_sets_review_retried(monkeypatch):
+    """An empty gpt-oss review is retried once, the retry is written to the
+    retry log, and that task's C2 row gets review_retried = True."""
+    import run_experiment_code as rec
+
+    tmp_dir = os.path.join(os.path.dirname(__file__), "..", "scratch_test_review_retry")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    os.makedirs(tmp_dir, exist_ok=True)
+    try:
+        monkeypatch.setattr(rec, "public_check", lambda task, code: {"all_pass": True, "first_failure": None})
+        responses = iter(["", "VERDICT: ACCEPT"])
+        sleeps = []
+        retry_log = os.path.join(tmp_dir, "review_retries.jsonl")
+        gptoss = rec.wrap_throttled_model(Model("openai/gpt-oss-20b", lambda p: next(responses)),
+                                          min_interval_s=0, retry_empty=True,
+                                          retry_log_path=retry_log, sleep=sleeps.append)
+
+        def grader(task, text):
+            return {"correct": True, "fingerprint": "PASS", "extracted": "h1", "ast_hash": "a1"}
+
+        tasks = [Task(task_id="t1", family="code_lcb", prompt="Solve it.\n\n" + rec.CODE_ANSWER_INSTRUCTION,
+                      ground_truth="PASS", meta={"statement": "Solve it."})]
+        executor = Model("mock_exec", lambda p: "```python\nprint(1)\n```")
+        log = RunLog(os.path.join(tmp_dir, "log.jsonl"))
+        run_per_experiment(tasks, executor, {"C0": None, "C2": gptoss}, DiskCache(os.path.join(tmp_dir, "cache")),
+                           log, TokenMeter(sleep=lambda _: None), grader=grader,
+                           review_prompt=CODE_REVIEW_PROMPT, revise_prompt=CODE_REVISE_PROMPT,
+                           review_input_fn=rec.code_review_input, revise_input_fn=rec.code_revise_input,
+                           extra_log_fn=rec.make_extra_code_log(os.path.join(tmp_dir, "programs.jsonl"),
+                                                                retry_log_path=retry_log),
+                           verbose=False)
+
+        assert sleeps == [60]
+        with open(retry_log, encoding="utf-8") as f:
+            entries = [json.loads(line) for line in f]
+        assert len(entries) == 1 and entries[0]["retry_empty"] is False
+        rows = {r["condition"]: r for r in log.load()}
+        assert rows["C2"]["review_retried"] is True and rows["C2"]["verdict"] == "ACCEPT"
+        assert rows["C0"]["review_retried"] is False
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def test_main_writes_token_records_even_when_run_crashes(monkeypatch):
+    """tokens.jsonl must keep the usage of calls already made when an
+    unexpected error stops the main run."""
+    import run_experiment_code as rec
+
+    tmp_dir = os.path.join(os.path.dirname(__file__), "..", "scratch_test_tokens_on_crash")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    os.makedirs(tmp_dir, exist_ok=True)
+    try:
+        ids_file = os.path.join(tmp_dir, "ids.json")
+        with open(ids_file, "w", encoding="utf-8") as f:
+            json.dump(["t1"], f)
+        monkeypatch.setattr(rec, "is_git_clean", lambda: True)
+        monkeypatch.setattr(rec, "preflight_code_providers", lambda: [])
+        monkeypatch.setattr(rec, "sandbox_preflight", lambda: [])
+        monkeypatch.setattr(rec, "cleanup_stale_containers", lambda: 0)
+        monkeypatch.setattr(rec, "load_lcb_tasks", lambda **k: [])
+        monkeypatch.setattr(rec, "code_experimental_models", lambda: [
+            Model("gemini-3.1-flash-lite", lambda p: ""),
+            Model("meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo", lambda p: ""),
+            Model("openai/gpt-oss-20b", lambda p: "")])
+
+        def crashing_run(tasks, executor, conds, cache, log, meter, **kw):
+            meter.records.append({"model": "gemini-3.1-flash-lite", "in_tokens": 11, "out_tokens": 7})
+            raise RuntimeError("provider exploded")
+        monkeypatch.setattr(rec, "run_per_experiment", crashing_run)
+        monkeypatch.setattr(sys, "argv", ["run_experiment_code.py", "--run-dir", tmp_dir, "--ids-file", ids_file])
+
+        with pytest.raises(RuntimeError, match="provider exploded"):
+            rec.main()
+        with open(os.path.join(tmp_dir, "tokens.jsonl"), encoding="utf-8") as f:
+            recs = [json.loads(line) for line in f]
+        assert recs == [{"model": "gemini-3.1-flash-lite", "in_tokens": 11, "out_tokens": 7}]
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def test_main_refuses_to_start_when_preflight_fails(monkeypatch, capsys):
+    """A failed provider preflight stops the run before the manifest or lock is written."""
+    import run_experiment_code as rec
+
+    tmp_dir = os.path.join(os.path.dirname(__file__), "..", "scratch_test_preflight_refuse")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    os.makedirs(tmp_dir, exist_ok=True)
+    try:
+        ids_file = os.path.join(tmp_dir, "ids.json")
+        with open(ids_file, "w", encoding="utf-8") as f:
+            json.dump(["t1"], f)
+        monkeypatch.setattr(rec, "is_git_clean", lambda: True)
+        monkeypatch.setattr(rec, "preflight_code_providers", lambda: ["DEEPINFRA_API_KEY is not set"])
+        monkeypatch.setattr(rec, "sandbox_preflight", lambda: [])
+        monkeypatch.setattr(sys, "argv", ["run_experiment_code.py", "--run-dir", tmp_dir, "--ids-file", ids_file])
+        with pytest.raises(SystemExit):
+            rec.main()
+        assert "DEEPINFRA_API_KEY is not set" in capsys.readouterr().out
+        assert not os.path.exists(os.path.join(tmp_dir, "run_manifest.json"))
+        assert not os.path.exists(os.path.join(tmp_dir, ".runner.lock"))
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)

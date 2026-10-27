@@ -7,7 +7,7 @@ Conditions:
   C0  no review (baseline)
   C1  self-review (Gemini reviews Gemini)
   C2  cross-family mid-tier review (gpt-oss-20b)
-  C3  weak review (Llama-3.1-8B)
+  C3  weak review (Llama-3.1-8B Instruct, served by DeepInfra)
   C4  public-test feedback (deterministic, zero-token)
 
 Modes:
@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import atexit
+import hashlib
 from collections import Counter
 import json
 import os
@@ -42,14 +43,15 @@ from prompts_code import (
     CODE_ANSWER_INSTRUCTION,
 )
 from test_reviewer import PublicTestReviewer
-from code_exec import code_hash, cleanup_stale_containers
+from code_exec import code_hash, cleanup_stale_containers, sandbox_preflight
 from harness import DiskCache, RunLog, Model
 from pipeline import run_per_experiment, analyze, TokenMeter
 try:
-    from providers import experimental_models, get_last_usage
+    from providers import code_experimental_models, get_last_usage, preflight_code_providers
 except (ImportError, ModuleNotFoundError):
-    experimental_models = None
+    code_experimental_models = None
     get_last_usage = None
+    preflight_code_providers = None
 
 # Top-level specification constants (from plan Section 6 Task T9)
 N_TASKS = 100
@@ -86,9 +88,35 @@ def code_revise_input(task, a0_text, critique):
     return {"problem": task.prompt, "solution": solution, "critique": critique}
 
 
-def make_extra_code_log(programs_log_path: str = os.path.join(RUN_DIR, "programs.jsonl")):
-    """Factory for extra_code_log with a configurable programs.jsonl path."""
+def _prompt_sha256(prompt: str) -> str:
+    return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+
+
+def load_retried_prompts(retry_log_path: str) -> set:
+    """sha256 of every review prompt that was retried after an empty response."""
+    if not retry_log_path or not os.path.exists(retry_log_path):
+        return set()
+    out = set()
+    with open(retry_log_path, encoding="utf-8") as f:
+        for line in f:
+            try:
+                out.add(json.loads(line)["prompt_sha256"])
+            except (json.JSONDecodeError, KeyError):
+                continue
+    return out
+
+
+def make_extra_code_log(programs_log_path: str = os.path.join(RUN_DIR, "programs.jsonl"),
+                        retry_log_path: str | None = None,
+                        retried_conditions: tuple = ("C2",)):
+    """Factory for extra_code_log with a configurable programs.jsonl path.
+    review_retried is True for a retried condition's row when its review prompt
+    appears in retry_log_path (written by wrap_throttled_model)."""
     def _extra_log_fn(task, condition, a0_text, a0_grade, final_grade, final_text=None):
+        review_retried = False
+        if retry_log_path and condition in retried_conditions:
+            prompt = CODE_REVIEW_PROMPT.format(**code_review_input(task, a0_text))
+            review_retried = _prompt_sha256(prompt) in load_retried_prompts(retry_log_path)
         a0_code = extract_program(a0_text)
         a0_pub_pass = public_check(task, a0_code)["all_pass"] if a0_code else False
         final_code = extract_program(final_text) if final_text is not None else a0_code
@@ -149,7 +177,7 @@ def make_extra_code_log(programs_log_path: str = os.path.join(RUN_DIR, "programs
             "infra_retries": final_grade.get("infra_retries", 0),
             "a0_public_pass": a0_pub_pass,
             "final_public_pass": final_pub_pass,
-            "review_retried": False,
+            "review_retried": review_retried,
         }
     return _extra_log_fn
 
@@ -161,8 +189,12 @@ extra_code_log = make_extra_code_log()
 # ---------------------------------------------------------------------------
 
 def wrap_throttled_model(base_model: Model, min_interval_s: float = GPTOSS_MIN_INTERVAL_S,
-                         retry_empty: bool = RETRY_EMPTY_REVIEW) -> Model:
-    """Throttle calls and optionally retry empty reviews once after 60 seconds."""
+                         retry_empty: bool = RETRY_EMPTY_REVIEW,
+                         retry_log_path: str | None = None,
+                         sleep=time.sleep) -> Model:
+    """Throttle calls and optionally retry empty reviews once after 60 seconds.
+    Each retry is appended to retry_log_path (prompt sha256, whether the retry
+    was also empty) before the retry is made."""
     last_call_time = 0.0
 
     def throttled_call(prompt: str) -> str:
@@ -170,16 +202,23 @@ def wrap_throttled_model(base_model: Model, min_interval_s: float = GPTOSS_MIN_I
         elapsed = time.time() - last_call_time
         if elapsed < min_interval_s:
             sleep_needed = min_interval_s - elapsed
-            time.sleep(sleep_needed)
+            sleep(sleep_needed)
 
         last_call_time = time.time()
         resp = base_model.call(prompt)
 
         # Optional single retry on empty review
         if retry_empty and (not resp or not resp.strip()):
-            time.sleep(60)
+            sleep(60)
             last_call_time = time.time()
             retry_resp = base_model.call(prompt)
+            if retry_log_path:
+                os.makedirs(os.path.dirname(retry_log_path) or ".", exist_ok=True)
+                with open(retry_log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"model_id": base_model.model_id,
+                                        "prompt_sha256": _prompt_sha256(prompt),
+                                        "retry_empty": not (retry_resp and retry_resp.strip()),
+                                        "ts": time.time()}) + "\n")
             if retry_resp and retry_resp.strip():
                 return retry_resp
 
@@ -216,7 +255,7 @@ def run_calibration(n: int, difficulties: list[str], date_from: str | None,
     if len(tasks) < n:
         print(f"Warning: Only {len(tasks)} candidate problems found matching filter (requested {n})")
 
-    models = {m.model_id: m for m in experimental_models()}
+    models = {m.model_id: m for m in code_experimental_models()}
     gemini = next(m for mid, m in models.items() if "gemini" in mid)
 
     calib_cache = DiskCache(os.path.join(run_dir, "calibration_cache"))
@@ -544,6 +583,13 @@ def main():
         print("Commit all code before starting the main experiment.")
         sys.exit(1)
 
+    problems = sandbox_preflight() + preflight_code_providers()
+    if problems:
+        print("ERROR: Main experiment refuses to start; preflight failed:")
+        for p_ in problems:
+            print(f"  - {p_}")
+        sys.exit(1)
+
     lock = RunnerLock(os.path.join(run_dir, ".runner.lock"))
     if not lock.acquire():
         print(f"ERROR: Another runner is active (lock file: {lock.lock_path}). Refusing to start.")
@@ -572,14 +618,16 @@ def main():
         )
         print(f"Loaded {len(tasks)} pre-registered tasks")
 
-        models = {m.model_id: m for m in experimental_models()}
+        models = {m.model_id: m for m in code_experimental_models()}
         gemini = next(m for mid, m in models.items() if "gemini" in mid)
         gptoss = next(m for mid, m in models.items() if "gpt-oss" in mid)
         llama = next(m for mid, m in models.items() if "llama" in mid)
 
         # Wrap gpt-oss with throttling and empty retry
+        retry_log_path = os.path.join(run_dir, "review_retries.jsonl")
         throttled_gptoss = wrap_throttled_model(gptoss, min_interval_s=GPTOSS_MIN_INTERVAL_S,
-                                               retry_empty=RETRY_EMPTY_REVIEW)
+                                               retry_empty=RETRY_EMPTY_REVIEW,
+                                               retry_log_path=retry_log_path)
 
         reviewer_conditions = {
             "C0": None,                   # no review (baseline)
@@ -593,28 +641,31 @@ def main():
         log = RunLog(os.path.join(run_dir, "log.jsonl"))
         meter = TokenMeter(usage_hook=get_last_usage)
         programs_path = os.path.join(run_dir, "programs.jsonl")
-        extra_log = make_extra_code_log(programs_path)
+        extra_log = make_extra_code_log(programs_path, retry_log_path=retry_log_path)
 
         print(f"\nCode PER experiment: {len(tasks)} tasks x {len(reviewer_conditions)} conditions")
         print(f"Executor: {gemini.model_id}")
         print(f"Prompts hash: {prompts_hash()}\n")
 
-        summary = run_per_experiment(
-            tasks, gemini, reviewer_conditions,
-            cache, log, meter,
-            grader=grade_lcb,
-            review_prompt=CODE_REVIEW_PROMPT,
-            revise_prompt=CODE_REVISE_PROMPT,
-            review_input_fn=code_review_input,
-            revise_input_fn=code_revise_input,
-            extra_log_fn=extra_log,
-        )
-        print(f"\nRun summary: {summary}")
-
-        tok_path = os.path.join(run_dir, "tokens.jsonl")
-        with open(tok_path, "a", encoding="utf-8") as f:
-            for t in meter.records:
-                f.write(json.dumps(t) + "\n")
+        try:
+            summary = run_per_experiment(
+                tasks, gemini, reviewer_conditions,
+                cache, log, meter,
+                grader=grade_lcb,
+                review_prompt=CODE_REVIEW_PROMPT,
+                revise_prompt=CODE_REVISE_PROMPT,
+                review_input_fn=code_review_input,
+                revise_input_fn=code_revise_input,
+                extra_log_fn=extra_log,
+            )
+            print(f"\nRun summary: {summary}")
+        finally:
+            # Written even when an unexpected error stops the run, so the
+            # provider usage of every call already made is kept.
+            tok_path = os.path.join(run_dir, "tokens.jsonl")
+            with open(tok_path, "a", encoding="utf-8") as f:
+                for t in meter.records:
+                    f.write(json.dumps(t) + "\n")
     finally:
         lock.release()
 

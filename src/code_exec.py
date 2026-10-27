@@ -50,6 +50,30 @@ def is_docker_available() -> bool:
     return shutil.which(DOCKER_BIN) is not None or os.path.exists(DOCKER_BIN)
 
 
+def _docker_daemon_alive() -> bool:
+    """True if the Docker daemon answers (`docker version` reports a server)."""
+    try:
+        proc = subprocess.run([DOCKER_BIN, "version", "--format", "{{.Server.Version}}"],
+                              capture_output=True, text=True, timeout=30, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0 and bool(proc.stdout.strip())
+
+
+def sandbox_preflight() -> list:
+    """Startup check: docker CLI present, daemon answering, pinned image present
+    locally. Returns a list of problems (empty when ready)."""
+    if not is_docker_available():
+        return [f"Docker binary '{DOCKER_BIN}' not found"]
+    if not _docker_daemon_alive():
+        return ["Docker daemon is not running (start Docker Desktop)"]
+    proc = subprocess.run([DOCKER_BIN, "image", "inspect", DOCKER_IMAGE, "--format", "{{.Id}}"],
+                          capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        return [f"Pinned image {DOCKER_IMAGE} is not present locally (docker pull it)"]
+    return []
+
+
 def normalize_output(text: str) -> str:
     """Normalize program output for comparison.
 
@@ -89,6 +113,7 @@ INFRA_ERROR_STRINGS = (
     "Cannot connect to the Docker daemon",
     "error during connect",
     "docker: Error",
+    "failed to connect to the docker API",   # Docker CLI 29.x, daemon down (exit 1)
 )
 
 
@@ -139,6 +164,10 @@ def _run_docker_single_attempt(code: str, stdin_text: str, timeout: float = EXEC
             )
             if _is_infra_error(proc.returncode, proc.stderr):
                 raise _DockerInfraFailure(f"Docker CLI/daemon failure (exit {proc.returncode}): {proc.stderr[:200]}")
+            # A non-zero exit is only a program crash if the daemon is alive;
+            # otherwise the docker CLI itself failed with a message we do not know.
+            if proc.returncode not in (0, 124) and not _docker_daemon_alive():
+                raise _DockerInfraFailure(f"Docker daemon not answering after exit {proc.returncode}: {proc.stderr[:200]}")
 
             if proc.returncode == 124:
                 return {
