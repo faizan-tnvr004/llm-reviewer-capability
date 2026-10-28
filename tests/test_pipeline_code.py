@@ -1478,3 +1478,27 @@ def test_main_refuses_to_start_when_preflight_fails(monkeypatch, capsys):
         assert not os.path.exists(os.path.join(tmp_dir, ".runner.lock"))
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def test_retried_review_records_tokens_of_both_calls():
+    """An empty review plus its retry are one review: the meter must record the
+    summed usage of both provider calls, not only the retry's."""
+    import types
+    import run_experiment_code as rec
+
+    usage = types.SimpleNamespace(_LAST_USAGE=None)
+    usage.get_last_usage = lambda: (lambda u: (setattr(usage, "_LAST_USAGE", None), u)[1])(usage._LAST_USAGE)
+    replies = iter([("", {"prompt_tokens": 1400, "completion_tokens": 6144}),
+                    ("VERDICT: ACCEPT", {"prompt_tokens": 1400, "completion_tokens": 300})])
+
+    def call(prompt):
+        text, u = next(replies)
+        usage._LAST_USAGE = u
+        return text
+
+    model = rec.wrap_throttled_model(Model("openai/gpt-oss-20b", call), min_interval_s=0,
+                                     retry_empty=True, sleep=lambda s: None, usage_module=usage)
+    meter = TokenMeter(usage_hook=usage.get_last_usage, sleep=lambda _: None)
+    assert meter.call(model, "review this", "review", "t1", "C2") == "VERDICT: ACCEPT"
+    rec_ = meter.records[0]
+    assert (rec_["in_tokens"], rec_["out_tokens"], rec_["exact"]) == (2800, 6444, True)

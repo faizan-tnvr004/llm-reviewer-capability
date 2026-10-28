@@ -47,8 +47,10 @@ from code_exec import code_hash, cleanup_stale_containers, sandbox_preflight
 from harness import DiskCache, RunLog, Model
 from pipeline import run_per_experiment, analyze, TokenMeter
 try:
+    import providers as _providers
     from providers import code_experimental_models, get_last_usage, preflight_code_providers
 except (ImportError, ModuleNotFoundError):
+    _providers = None
     code_experimental_models = None
     get_last_usage = None
     preflight_code_providers = None
@@ -191,10 +193,12 @@ extra_code_log = make_extra_code_log()
 def wrap_throttled_model(base_model: Model, min_interval_s: float = GPTOSS_MIN_INTERVAL_S,
                          retry_empty: bool = RETRY_EMPTY_REVIEW,
                          retry_log_path: str | None = None,
-                         sleep=time.sleep) -> Model:
+                         sleep=time.sleep, usage_module=None) -> Model:
     """Throttle calls and optionally retry empty reviews once after 60 seconds.
     Each retry is appended to retry_log_path (prompt sha256, whether the retry
-    was also empty) before the retry is made."""
+    was also empty) before the retry is made. When a retry happens, the usage of
+    both calls is summed so the TokenMeter records one review's full cost."""
+    usage_module = usage_module or _providers
     last_call_time = 0.0
 
     def throttled_call(prompt: str) -> str:
@@ -209,9 +213,15 @@ def wrap_throttled_model(base_model: Model, min_interval_s: float = GPTOSS_MIN_I
 
         # Optional single retry on empty review
         if retry_empty and (not resp or not resp.strip()):
+            first_usage = usage_module.get_last_usage() if usage_module else None
             sleep(60)
             last_call_time = time.time()
             retry_resp = base_model.call(prompt)
+            if usage_module and first_usage:
+                retry_usage = usage_module.get_last_usage() or {}
+                usage_module._LAST_USAGE = {
+                    k: first_usage.get(k, 0) + retry_usage.get(k, 0)
+                    for k in ("prompt_tokens", "completion_tokens")}
             if retry_log_path:
                 os.makedirs(os.path.dirname(retry_log_path) or ".", exist_ok=True)
                 with open(retry_log_path, "a", encoding="utf-8") as f:

@@ -167,7 +167,7 @@ This study replicates and extends the Olympiad Math pipeline-error study on exec
 6. **Groq Throttling & Single Retry**:
    - `openai/gpt-oss-20b` calls are throttled to at least 40 seconds apart to prevent hitting the 8,000 TPM limit.
    - If `openai/gpt-oss-20b` returns an empty review, the runner waits 60 seconds and retries once. If still empty, it is logged with `review_retried = True` and treated as `ACCEPT`.
-   - Every retry is appended to `run_code_data/review_retries.jsonl` (prompt SHA-256 and whether the retry was also empty) before the retry is made. A C2 row has `review_retried = True` whenever its review prompt appears there, whether or not the retry produced a review.
+   - Every retry is appended to `run_code_data/review_retries.jsonl` (prompt SHA-256 and whether the retry was also empty) before the retry is made. A C2 row has `review_retried = True` whenever its review prompt appears there, whether or not the retry produced a review. The token record for a retried review is the sum of both provider calls.
 7. **Full Critique Logging**: The full, untruncated critique text is logged in `critique_text` for conditions C1–C4.
 8. **Program Identity**: Judged primarily by `final_ast_hash == a0_ast_hash` (normalized AST dump with comments and docstrings stripped). The raw text code hash `final_code_hash == a0_code_hash` (first 16 hex characters of SHA-256 of normalized code) is reported alongside.
 9. **No Code**: Programs where no Python code block can be extracted receive fingerprint `NO_CODE` and are scored as incorrect.
