@@ -1342,20 +1342,88 @@ def test_extra_code_log_records_final_program_and_its_public_result(monkeypatch)
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-def test_preflight_reports_missing_keys_without_network(monkeypatch):
-    """Preflight lists every missing key and skips host checks it cannot make."""
+def test_preflight_reports_missing_keys_and_unreachable_ollama(monkeypatch):
+    """Preflight lists every missing key, never contacts Groq without its key,
+    and reports an Ollama server that does not answer."""
     import providers
-    for var in ("GOOGLE_API_KEY", "GROQ_API_KEY", "DEEPINFRA_API_KEY"):
+    for var in ("GOOGLE_API_KEY", "GROQ_API_KEY"):
         monkeypatch.delenv(var, raising=False)
+    contacted = []
 
-    def no_network(*a, **k):
-        raise AssertionError("preflight must not contact a host without its key")
+    def fake_get(url, **k):
+        contacted.append(url)
+        raise ConnectionError("refused")
     import httpx
-    monkeypatch.setattr(httpx, "get", no_network)
+    monkeypatch.setattr(httpx, "get", fake_get)
 
     problems = providers.preflight_code_providers()
-    for var in ("GOOGLE_API_KEY", "GROQ_API_KEY", "DEEPINFRA_API_KEY"):
+    for var in ("GOOGLE_API_KEY", "GROQ_API_KEY"):
         assert f"{var} is not set" in problems
+    assert any(p.startswith("Ollama server not reachable") for p in problems)
+    assert contacted == [f"{providers.OLLAMA_BASE_URL}/api/tags"]
+
+
+def test_preflight_refuses_ollama_model_with_other_digest(monkeypatch):
+    """Only the pinned Llama build passes the preflight."""
+    import providers
+    monkeypatch.setenv("GOOGLE_API_KEY", "x")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"models": [{"name": providers.LLAMA_CODE_MODEL, "digest": "0" * 64}]}
+    import httpx
+    monkeypatch.setattr(httpx, "get", lambda url, **k: Resp())
+    problems = providers.preflight_code_providers()
+    assert any("is not the pinned" in p for p in problems)
+
+
+def test_ollama_call_sends_pinned_options_and_records_usage(monkeypatch):
+    """C3 requests use temperature 0.7, 2,048 output tokens and an 8,192 context,
+    and the provider-reported token counts are recorded."""
+    import providers
+    sent = {}
+
+    class Resp:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": "VERDICT: ACCEPT"}, "prompt_eval_count": 1341, "eval_count": 93}
+
+    def fake_post(url, json=None, **k):
+        sent.update(url=url, body=json)
+        return Resp()
+    import httpx
+    monkeypatch.setattr(httpx, "post", fake_post)
+    assert providers.call_llama_ollama("review") == "VERDICT: ACCEPT"
+    assert sent["url"].endswith("/api/chat")
+    assert sent["body"]["model"] == "llama3.1:8b-instruct-q8_0"
+    assert sent["body"]["options"] == {"temperature": 0.7, "num_predict": 2048, "num_ctx": 8192}
+    assert providers.get_last_usage() == {"prompt_tokens": 1341, "completion_tokens": 93}
+
+
+def test_ollama_call_refuses_a_prompt_that_filled_the_context(monkeypatch):
+    """A prompt that fills the context may have been truncated; never review it silently."""
+    import providers
+
+    class Resp:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": "VERDICT: ACCEPT"}, "prompt_eval_count": 8192, "eval_count": 5}
+    import httpx
+    monkeypatch.setattr(httpx, "post", lambda url, **k: Resp())
+    with pytest.raises(RuntimeError, match="filled the 8192-token context"):
+        providers.call_llama_ollama("very long review")
 
 
 def test_missing_sdk_is_reported_as_missing_sdk_not_missing_key(monkeypatch):
@@ -1366,13 +1434,13 @@ def test_missing_sdk_is_reported_as_missing_sdk_not_missing_key(monkeypatch):
         providers.call_gemini("hello")
 
 
-def test_code_models_use_deepinfra_llama_and_leave_math_models_unchanged():
-    """C3 in the code study is Llama 3.1 8B Instruct on DeepInfra; the math
+def test_code_models_use_local_llama_and_leave_math_models_unchanged():
+    """C3 in the code study is Llama 3.1 8B Instruct in local Ollama; the math
     study's model list still names the original Groq model."""
     import providers
     code_ids = [m.model_id for m in providers.code_experimental_models()]
     math_ids = [m.model_id for m in providers.experimental_models()]
-    assert code_ids == ["gemini-3.1-flash-lite", "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo", "openai/gpt-oss-20b"]
+    assert code_ids == ["gemini-3.1-flash-lite", "llama3.1:8b-instruct-q8_0", "openai/gpt-oss-20b"]
     assert math_ids == ["gemini-3.1-flash-lite", "llama-3.1-8b-instant", "openai/gpt-oss-20b"]
 
 
@@ -1438,7 +1506,7 @@ def test_main_writes_token_records_even_when_run_crashes(monkeypatch):
         monkeypatch.setattr(rec, "load_lcb_tasks", lambda **k: [])
         monkeypatch.setattr(rec, "code_experimental_models", lambda: [
             Model("gemini-3.1-flash-lite", lambda p: ""),
-            Model("meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo", lambda p: ""),
+            Model("llama3.1:8b-instruct-q8_0", lambda p: ""),
             Model("openai/gpt-oss-20b", lambda p: "")])
 
         def crashing_run(tasks, executor, conds, cache, log, meter, **kw):
@@ -1468,12 +1536,12 @@ def test_main_refuses_to_start_when_preflight_fails(monkeypatch, capsys):
         with open(ids_file, "w", encoding="utf-8") as f:
             json.dump(["t1"], f)
         monkeypatch.setattr(rec, "is_git_clean", lambda: True)
-        monkeypatch.setattr(rec, "preflight_code_providers", lambda: ["DEEPINFRA_API_KEY is not set"])
+        monkeypatch.setattr(rec, "preflight_code_providers", lambda: ["GROQ_API_KEY is not set"])
         monkeypatch.setattr(rec, "sandbox_preflight", lambda: [])
         monkeypatch.setattr(sys, "argv", ["run_experiment_code.py", "--run-dir", tmp_dir, "--ids-file", ids_file])
         with pytest.raises(SystemExit):
             rec.main()
-        assert "DEEPINFRA_API_KEY is not set" in capsys.readouterr().out
+        assert "GROQ_API_KEY is not set" in capsys.readouterr().out
         assert not os.path.exists(os.path.join(tmp_dir, "run_manifest.json"))
         assert not os.path.exists(os.path.join(tmp_dir, ".runner.lock"))
     finally:

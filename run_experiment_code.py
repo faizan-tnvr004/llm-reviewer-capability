@@ -7,7 +7,7 @@ Conditions:
   C0  no review (baseline)
   C1  self-review (Gemini reviews Gemini)
   C2  cross-family mid-tier review (gpt-oss-20b)
-  C3  weak review (Llama-3.1-8B Instruct, served by DeepInfra)
+  C3  weak review (Llama-3.1-8B Instruct, local Ollama)
   C4  public-test feedback (deterministic, zero-token)
 
 Modes:
