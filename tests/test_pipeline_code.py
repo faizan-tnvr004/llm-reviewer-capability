@@ -1570,3 +1570,70 @@ def test_retried_review_records_tokens_of_both_calls():
     assert meter.call(model, "review this", "review", "t1", "C2") == "VERDICT: ACCEPT"
     rec_ = meter.records[0]
     assert (rec_["in_tokens"], rec_["out_tokens"], rec_["exact"]) == (2800, 6444, True)
+
+
+def test_streamed_token_records_are_on_disk_before_the_run_ends():
+    """Each token record reaches tokens.jsonl as soon as the call finishes, so a
+    killed run keeps it; a normal end does not write the records a second time."""
+    import run_experiment_code as rec
+
+    tmp_dir = os.path.join(os.path.dirname(__file__), "..", "scratch_test_streamed_tokens")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    os.makedirs(tmp_dir, exist_ok=True)
+    try:
+        path = os.path.join(tmp_dir, "tokens.jsonl")
+        seen_on_disk = []
+        meter = TokenMeter(usage_hook=lambda: {"prompt_tokens": 10, "completion_tokens": 3},
+                           sleep=lambda _: None)
+        meter.records = rec.StreamedTokenRecords(path)
+
+        def call(prompt):
+            if os.path.exists(path):
+                with open(path, encoding="utf-8") as fh:
+                    seen_on_disk.append(len(fh.readlines()))
+            return "ok"
+        model = Model("mock", call)
+        for i in range(3):
+            meter.call(model, f"p{i}", "execute", f"t{i}", "shared")
+        assert seen_on_disk == [1, 2]            # earlier records were on disk before later calls
+        with open(path, encoding="utf-8") as fh:
+            lines = [json.loads(line) for line in fh]
+        assert [r["task_id"] for r in lines] == ["t0", "t1", "t2"]
+        assert lines == list(meter.records)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def test_main_streams_tokens_and_does_not_duplicate_them_at_exit(monkeypatch):
+    """main() hands the meter a StreamedTokenRecords list and writes nothing extra at exit."""
+    import run_experiment_code as rec
+
+    tmp_dir = os.path.join(os.path.dirname(__file__), "..", "scratch_test_tokens_no_dup")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    os.makedirs(tmp_dir, exist_ok=True)
+    try:
+        ids_file = os.path.join(tmp_dir, "ids.json")
+        with open(ids_file, "w", encoding="utf-8") as f:
+            json.dump(["t1"], f)
+        for name, value in (("is_git_clean", lambda: True), ("preflight_code_providers", lambda: []),
+                            ("sandbox_preflight", lambda: []), ("cleanup_stale_containers", lambda: 0),
+                            ("load_lcb_tasks", lambda **k: [])):
+            monkeypatch.setattr(rec, name, value)
+        monkeypatch.setattr(rec, "code_experimental_models", lambda: [
+            Model("gemini-3.1-flash-lite", lambda p: ""),
+            Model("llama3.1:8b-instruct-q8_0", lambda p: ""),
+            Model("openai/gpt-oss-20b", lambda p: "")])
+        seen = {}
+
+        def normal_run(tasks, executor, conds, cache, log, meter, **kw):
+            seen["type"] = type(meter.records).__name__
+            meter.records.append({"model_id": "gemini-3.1-flash-lite", "in_tokens": 5, "out_tokens": 2})
+            return {"completed_outcomes": 0}
+        monkeypatch.setattr(rec, "run_per_experiment", normal_run)
+        monkeypatch.setattr(sys, "argv", ["run_experiment_code.py", "--run-dir", tmp_dir, "--ids-file", ids_file])
+        rec.main()
+        assert seen["type"] == "StreamedTokenRecords"
+        with open(os.path.join(tmp_dir, "tokens.jsonl"), encoding="utf-8") as f:
+            assert len(f.readlines()) == 1
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)

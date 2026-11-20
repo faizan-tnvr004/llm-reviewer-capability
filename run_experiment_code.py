@@ -190,6 +190,24 @@ extra_code_log = make_extra_code_log()
 # Rate-limiting and Retry Wrapper for gpt-oss
 # ---------------------------------------------------------------------------
 
+class StreamedTokenRecords(list):
+    """TokenMeter.records that also appends each record to tokens.jsonl, flushed
+    to disk, the moment it is added. A run that is killed or loses power keeps
+    the usage of every call that finished (amendment 1, 20 November 2026)."""
+
+    def __init__(self, path: str):
+        super().__init__()
+        self.path = path
+
+    def append(self, rec: dict) -> None:
+        super().append(rec)
+        os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+        with open(self.path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+
+
 def wrap_throttled_model(base_model: Model, min_interval_s: float = GPTOSS_MIN_INTERVAL_S,
                          retry_empty: bool = RETRY_EMPTY_REVIEW,
                          retry_log_path: str | None = None,
@@ -650,6 +668,7 @@ def main():
         cache = DiskCache(os.path.join(run_dir, "cache"))
         log = RunLog(os.path.join(run_dir, "log.jsonl"))
         meter = TokenMeter(usage_hook=get_last_usage)
+        meter.records = StreamedTokenRecords(os.path.join(run_dir, "tokens.jsonl"))
         programs_path = os.path.join(run_dir, "programs.jsonl")
         extra_log = make_extra_code_log(programs_path, retry_log_path=retry_log_path)
 
@@ -657,25 +676,19 @@ def main():
         print(f"Executor: {gemini.model_id}")
         print(f"Prompts hash: {prompts_hash()}\n")
 
-        try:
-            summary = run_per_experiment(
-                tasks, gemini, reviewer_conditions,
-                cache, log, meter,
-                grader=grade_lcb,
-                review_prompt=CODE_REVIEW_PROMPT,
-                revise_prompt=CODE_REVISE_PROMPT,
-                review_input_fn=code_review_input,
-                revise_input_fn=code_revise_input,
-                extra_log_fn=extra_log,
-            )
-            print(f"\nRun summary: {summary}")
-        finally:
-            # Written even when an unexpected error stops the run, so the
-            # provider usage of every call already made is kept.
-            tok_path = os.path.join(run_dir, "tokens.jsonl")
-            with open(tok_path, "a", encoding="utf-8") as f:
-                for t in meter.records:
-                    f.write(json.dumps(t) + "\n")
+        # Token records are already on disk: StreamedTokenRecords writes each one
+        # as it is made, so no write is needed when the run ends.
+        summary = run_per_experiment(
+            tasks, gemini, reviewer_conditions,
+            cache, log, meter,
+            grader=grade_lcb,
+            review_prompt=CODE_REVIEW_PROMPT,
+            revise_prompt=CODE_REVISE_PROMPT,
+            review_input_fn=code_review_input,
+            revise_input_fn=code_revise_input,
+            extra_log_fn=extra_log,
+        )
+        print(f"\nRun summary: {summary}")
     finally:
         lock.release()
 
