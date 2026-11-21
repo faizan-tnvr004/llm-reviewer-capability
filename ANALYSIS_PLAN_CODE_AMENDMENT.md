@@ -33,3 +33,17 @@ From the next runner start onward, `run_experiment_code.py` gives the `TokenMete
 The record format, the usage source and the estimator fallback are unchanged. The change affects only when records reach disk; it touches no code that produces or scores an outcome.
 
 The run in progress when this amendment was written keeps running the earlier code from memory. Its records are written when it exits normally. The first runner start on the amended commit appears as a new entry in `run_manifest.json`.
+
+## 4. Further hangs (added 21 November 2026)
+
+Three more requests never returned on 21 November 2026, all to Gemini (`gemini-3.1-flash-lite`). The Gemini SDK sets no overall request timeout by default, so the runner waited on an open connection with no CPU activity. Under the owner's standing instruction to restart on any hang, each was resolved by killing the runner and re-running the same command at commit `91a31d7` (`git_describe = prereg-code-v1-1-g91a31d7`). Each restart added an entry to `run_manifest.json`.
+
+| # | Request that never returned | Sent (UTC) | Runner killed (UTC) | Restarted (UTC) | Manifest entry |
+|---|---|---|---|---|---|
+| 2 | `abc381_d` C1 revision | 09:25:58 | 10:08:16 | 10:08:25 | 4 |
+| 3 | `abc390_f` C2 revision (after the C2 review completed) | about 11:07 | 11:27:11 | 11:27:18 | 5 |
+| 4 | `arc189_d` C1 review | about 12:01:46 | 12:17:30 | 12:17:36 | 6 |
+
+The effect on outcomes is the same as for the first incident: none. No logged row was edited or rescored. After each restart the run resumed at the interrupted (problem, condition), and only the request that had never returned was sent again. Token records were already being written per call (Section 3), so no token usage was lost in these three incidents.
+
+These four hangs (one on Groq, three on Gemini) share one cause: neither SDK puts a total time limit on a request. Fixing that would change how the runner handles provider calls mid-run, so it was not done. The weakness is reported as a limitation of this setup, and the restarts are reported as above.
