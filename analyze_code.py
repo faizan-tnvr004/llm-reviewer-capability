@@ -36,6 +36,7 @@ if sys.platform == "win32":
 
 DEFAULT_LOG = os.path.join("run_code_data", "log.jsonl")
 DEFAULT_TOKENS = os.path.join("run_code_data", "tokens.jsonl")
+DEFAULT_TOKENS_RECONSTRUCTED = os.path.join("run_code_data", "tokens_reconstructed.jsonl")
 DEFAULT_PROGRAMS = os.path.join("run_code_data", "programs.jsonl")
 DEFAULT_OUT = os.path.join("run_code_data", "RESULTS.md")
 
@@ -48,6 +49,8 @@ def parse_args():
     p = argparse.ArgumentParser(description="Analyze code extension results")
     p.add_argument("--log", default=DEFAULT_LOG, help="Path to experiment log")
     p.add_argument("--tokens", default=DEFAULT_TOKENS, help="Path to token records")
+    p.add_argument("--tokens-reconstructed", default=DEFAULT_TOKENS_RECONSTRUCTED,
+                   help="Re-estimated token records for calls whose exact usage was lost (Amendment 1)")
     p.add_argument("--programs", default=DEFAULT_PROGRAMS, help="Path to programs.jsonl")
     p.add_argument("--out", default=DEFAULT_OUT, help="Path to output RESULTS.md")
     return p.parse_args()
@@ -352,7 +355,8 @@ def temporal_sensitivity(rows: list[dict], boundary: str = E2_BOUNDARY) -> dict:
 # Main analysis & report generation
 # ---------------------------------------------------------------------------
 
-def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | None = None) -> dict:
+def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | None = None,
+                 reconstructed_tokens_path: str | None = None) -> dict:
     if not os.path.exists(log_path):
         raise FileNotFoundError(f"Log file not found: {log_path}")
 
@@ -520,16 +524,30 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
     c4_false_accept_total = len(wrong_a0_rows)
     c4_false_accept_rate = (c4_false_accept_count / c4_false_accept_total) if c4_false_accept_total else 0.0
 
-    # Token usage per condition
-    token_stats = {}
-    for cond in conds:
-        toks = [t.get("in_tokens", 0) + t.get("out_tokens", 0) for t in all_tokens
-                if t.get("condition") in (cond, "shared")]
-        n = cond_stats[cond]["n"] or 1
-        delta_correct = cond_stats[cond]["correct"] - cond_stats.get("C0", {}).get("correct", 0)
-        mean_tok = sum(toks) / n if toks else 0.0
-        tok_per_extra = (sum(toks) / delta_correct) if delta_correct > 0 else float("inf")
-        token_stats[cond] = {"mean_tok": mean_tok, "delta_correct": delta_correct, "tok_per_extra": tok_per_extra}
+    # Token usage per condition. Amendment 1, Section 2: the primary view uses only
+    # problems whose executor call has an exact usage record; the secondary view
+    # adds the re-estimated (exact: false) records and covers every problem.
+    def token_view(records, task_ids):
+        stats = {}
+        for cond in conds:
+            rs = [r for r in rows if r["condition"] == cond and r["task_id"] in task_ids]
+            c0 = [r for r in rows if r["condition"] == "C0" and r["task_id"] in task_ids]
+            toks = sum(t.get("in_tokens", 0) + t.get("out_tokens", 0) for t in records
+                       if t.get("condition") in (cond, "shared") and t.get("task_id") in task_ids)
+            delta_correct = sum(bool(r.get("final_correct")) for r in rs) - sum(bool(r.get("final_correct")) for r in c0)
+            stats[cond] = {"n_tasks": len(rs), "mean_tok": toks / len(rs) if rs else 0.0,
+                           "delta_correct": delta_correct,
+                           "tok_per_extra": (toks / delta_correct) if delta_correct > 0 else float("inf")}
+        return stats
+
+    all_task_ids = {r["task_id"] for r in rows}
+    exact_task_ids = {t["task_id"] for t in all_tokens
+                      if t.get("exact") and t.get("stage") == "execute" and t.get("condition") == "shared"}
+    token_stats = token_view(all_tokens, exact_task_ids)
+    token_stats_all = None
+    if reconstructed_tokens_path and os.path.exists(reconstructed_tokens_path):
+        extra = [json.loads(line) for line in open(reconstructed_tokens_path, encoding="utf-8") if line.strip()]
+        token_stats_all = token_view(all_tokens + extra, all_task_ids)
 
     # ---- Print Console Summary (ASCII safe) ----
     print(f"\nLoaded {len(rows)} outcome rows from {log_path}")
@@ -643,14 +661,18 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
         "",
         f"- **C4 False-Accept Count / Rate**: {c4_false_accept_count}/{c4_false_accept_total} ({c4_false_accept_rate*100:.1f}%) wrong A0 programs passed all public sample tests.",
         "",
-        "| Condition | Timeouts | Timeout Rate | Mean Tokens / Task | Cost / Extra Correct Answer |",
-        "|---|---|---|---|---|",
+        f"Tokens use exact provider usage on the {len(exact_task_ids)} problems whose records survived (Amendment 1, Section 2). "
+        "The all-problems column adds re-estimated chars/4 records for the rest, which miss hidden reasoning tokens.",
+        "",
+        "| Condition | Timeouts | Timeout Rate | Mean Tokens / Task (exact problems) | Cost / Extra Correct Answer (exact problems) | Mean Tokens / Task (all problems, incl. estimates) |",
+        "|---|---|---|---|---|---|",
     ])
     for c in conds:
         tm = timeout_stats[c]
         tk = token_stats.get(c, {"mean_tok": 0.0, "tok_per_extra": float("inf")})
         cpe = "inf" if tk["tok_per_extra"] == float("inf") else f"{tk['tok_per_extra']:.0f}"
-        md_lines.append(f"| **{c}** | {tm['n_timeouts']}/{tm['total']} | {tm['rate']*100:.1f}% | {tk['mean_tok']:.0f} | {cpe} |")
+        all_tok = f"{token_stats_all[c]['mean_tok']:.0f}" if token_stats_all else "n/a"
+        md_lines.append(f"| **{c}** | {tm['n_timeouts']}/{tm['total']} | {tm['rate']*100:.1f}% | {tk['mean_tok']:.0f} | {cpe} | {all_tok} |")
 
     # Math vs Code comparison table
     md_lines.extend([
@@ -740,6 +762,8 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
         "rejection_breakdown": rejection_breakdown,
         "fisher": fisher_results,
         "timeout_stats": timeout_stats,
+        "token_stats": token_stats,
+        "token_stats_all": token_stats_all,
         "hypotheses": hypotheses,
         "e2": e2,
     }
@@ -750,7 +774,7 @@ def main():
     if os.path.exists(args.programs):
         progs = load_programs(args.programs)
         print(f"Loaded {len(progs)} unique programs from {args.programs} (de-duplicated by task_id, condition, stage)")
-    run_analysis(args.log, args.tokens, args.out)
+    run_analysis(args.log, args.tokens, args.out, args.tokens_reconstructed)
 
 
 if __name__ == "__main__":

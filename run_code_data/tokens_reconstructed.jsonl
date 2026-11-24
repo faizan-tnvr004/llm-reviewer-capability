@@ -1,0 +1,161 @@
+{"in_tokens": 628, "out_tokens": 837, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "arc185_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 773, "out_tokens": 158, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "arc185_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 954, "out_tokens": 610, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc185_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 773, "out_tokens": 56, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "arc185_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 853, "out_tokens": 795, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc185_d", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 773, "out_tokens": 61, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "arc185_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 830, "out_tokens": 489, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc185_d", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 326, "out_tokens": 587, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc395_c", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 606, "out_tokens": 98, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc395_c", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 606, "out_tokens": 3, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc395_c", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 606, "out_tokens": 146, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc395_c", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 365, "out_tokens": 754, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc396_c", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 732, "out_tokens": 246, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc396_c", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1001, "out_tokens": 976, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc396_c", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1464, "out_tokens": 3, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc396_c", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 732, "out_tokens": 179, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc396_c", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 578, "out_tokens": 718, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc395_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 878, "out_tokens": 135, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc395_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1756, "out_tokens": 1, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc395_f", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 878, "out_tokens": 128, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc395_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 636, "out_tokens": 1164, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc389_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1350, "out_tokens": 145, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc389_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1518, "out_tokens": 889, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc389_f", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1350, "out_tokens": 111, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc389_f", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1484, "out_tokens": 921, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc389_f", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 1350, "out_tokens": 131, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc389_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1415, "out_tokens": 1154, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc389_f", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 340, "out_tokens": 637, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc377_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 659, "out_tokens": 211, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc377_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 894, "out_tokens": 704, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc377_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 659, "out_tokens": 7, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc377_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 659, "out_tokens": 131, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc377_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 292, "out_tokens": 1127, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc387_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 930, "out_tokens": 203, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc387_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1156, "out_tokens": 830, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc387_f", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 930, "out_tokens": 109, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc387_f", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1062, "out_tokens": 902, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc387_f", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 930, "out_tokens": 229, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc387_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 988, "out_tokens": 1432, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc387_f", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 751, "out_tokens": 1222, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "arc189_c", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1495, "out_tokens": 157, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "arc189_c", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1675, "out_tokens": 759, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc189_c", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1495, "out_tokens": 78, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "arc189_c", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1597, "out_tokens": 856, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc189_c", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 1495, "out_tokens": 188, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "arc189_c", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1562, "out_tokens": 833, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc189_c", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 359, "out_tokens": 813, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc396_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 853, "out_tokens": 160, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc396_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1037, "out_tokens": 675, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc396_f", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 853, "out_tokens": 136, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc396_f", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1013, "out_tokens": 1031, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc396_f", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 853, "out_tokens": 156, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc396_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 913, "out_tokens": 738, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc396_f", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 511, "out_tokens": 813, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc391_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 966, "out_tokens": 142, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc391_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1131, "out_tokens": 640, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc391_f", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1932, "out_tokens": 1, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc391_f", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 966, "out_tokens": 114, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc391_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 522, "out_tokens": 974, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "arc190_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 950, "out_tokens": 216, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "arc190_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1189, "out_tokens": 691, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc190_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 950, "out_tokens": 56, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "arc190_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1029, "out_tokens": 739, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc190_d", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 950, "out_tokens": 128, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "arc190_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1011, "out_tokens": 1025, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc190_d", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 666, "out_tokens": 781, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "arc186_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1100, "out_tokens": 166, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "arc186_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1290, "out_tokens": 724, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc186_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1100, "out_tokens": 80, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "arc186_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1204, "out_tokens": 911, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc186_d", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 1100, "out_tokens": 141, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "arc186_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1161, "out_tokens": 917, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc186_d", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 380, "out_tokens": 829, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc379_g", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 788, "out_tokens": 143, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc379_g", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1576, "out_tokens": 106, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc379_g", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 917, "out_tokens": 572, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc379_g", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 788, "out_tokens": 140, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc379_g", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 603, "out_tokens": 856, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "arc192_a", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 894, "out_tokens": 184, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "arc192_a", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1102, "out_tokens": 740, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc192_a", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1788, "out_tokens": 90, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "arc192_a", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 1008, "out_tokens": 591, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc192_a", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 894, "out_tokens": 67, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "arc192_a", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 455, "out_tokens": 584, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc380_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 809, "out_tokens": 211, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc380_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1043, "out_tokens": 575, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc380_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1618, "out_tokens": 1, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc380_d", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 809, "out_tokens": 112, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc380_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 406, "out_tokens": 694, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc388_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 734, "out_tokens": 200, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc388_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 958, "out_tokens": 596, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc388_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 734, "out_tokens": 94, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc388_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 852, "out_tokens": 626, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc388_d", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 734, "out_tokens": 98, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc388_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 796, "out_tokens": 659, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc388_d", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 592, "out_tokens": 773, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc390_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1027, "out_tokens": 117, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc390_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1027, "out_tokens": 90, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc390_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1027, "out_tokens": 106, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc390_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 455, "out_tokens": 876, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc399_e", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 904, "out_tokens": 137, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc399_e", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1065, "out_tokens": 846, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc399_e", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 904, "out_tokens": 127, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc399_e", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1055, "out_tokens": 705, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc399_e", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 904, "out_tokens": 135, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc399_e", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 962, "out_tokens": 708, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc399_e", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 412, "out_tokens": 1034, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc394_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 941, "out_tokens": 97, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc394_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1062, "out_tokens": 785, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc394_f", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 941, "out_tokens": 84, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc394_f", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1049, "out_tokens": 724, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc394_f", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 941, "out_tokens": 127, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc394_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1092, "out_tokens": 883, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc394_f", "condition": "C3", "exact": false, "reconstructed": true}
+{"in_tokens": 1005, "out_tokens": 703, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc394_f", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 457, "out_tokens": 535, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc388_c", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 735, "out_tokens": 132, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc388_c", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 735, "out_tokens": 3, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc388_c", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 735, "out_tokens": 156, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc388_c", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 467, "out_tokens": 557, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc386_c", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 817, "out_tokens": 101, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc386_c", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 942, "out_tokens": 413, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc386_c", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 817, "out_tokens": 63, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc386_c", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 903, "out_tokens": 538, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc386_c", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 817, "out_tokens": 79, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc386_c", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 572, "out_tokens": 780, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc374_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1021, "out_tokens": 79, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc374_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 2042, "out_tokens": 1, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc374_f", "condition": "C2", "retried": true, "exact": false, "reconstructed": true}
+{"in_tokens": 1021, "out_tokens": 85, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc374_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 642, "out_tokens": 899, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc388_g", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 952, "out_tokens": 108, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc388_g", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1084, "out_tokens": 673, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc388_g", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 952, "out_tokens": 94, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc388_g", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1070, "out_tokens": 694, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc388_g", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 952, "out_tokens": 86, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc388_g", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1025, "out_tokens": 705, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc388_g", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 524, "out_tokens": 993, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc391_d", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1247, "out_tokens": 216, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc391_d", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1487, "out_tokens": 973, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc391_d", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 1247, "out_tokens": 91, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc391_d", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1361, "out_tokens": 772, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc391_d", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 1247, "out_tokens": 139, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc391_d", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1325, "out_tokens": 721, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc391_d", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 452, "out_tokens": 842, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "arc187_b", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 915, "out_tokens": 176, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "arc187_b", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1114, "out_tokens": 730, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc187_b", "condition": "C1", "exact": false, "reconstructed": true}
+{"in_tokens": 915, "out_tokens": 102, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "arc187_b", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1040, "out_tokens": 677, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc187_b", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 915, "out_tokens": 100, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "arc187_b", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 973, "out_tokens": 783, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "arc187_b", "condition": "C4", "exact": false, "reconstructed": true}
+{"in_tokens": 704, "out_tokens": 672, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc395_e", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1102, "out_tokens": 106, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc395_e", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1102, "out_tokens": 63, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc395_e", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1102, "out_tokens": 162, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc395_e", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 536, "out_tokens": 851, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc375_f", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 1012, "out_tokens": 135, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc375_f", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1012, "out_tokens": 72, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc375_f", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 1108, "out_tokens": 757, "model_id": "gemini-3.1-flash-lite", "stage": "revise", "task_id": "abc375_f", "condition": "C2", "exact": false, "reconstructed": true}
+{"in_tokens": 1012, "out_tokens": 105, "model_id": "llama3.1:8b-instruct-q8_0", "stage": "review", "task_id": "abc375_f", "condition": "C3", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 580, "out_tokens": 824, "model_id": "gemini-3.1-flash-lite", "stage": "execute", "task_id": "abc374_e", "condition": "shared", "exact": false, "reconstructed": true}
+{"in_tokens": 976, "out_tokens": 119, "model_id": "gemini-3.1-flash-lite", "stage": "review", "task_id": "abc374_e", "condition": "C1", "retried": false, "exact": false, "reconstructed": true}
+{"in_tokens": 976, "out_tokens": 108, "model_id": "openai/gpt-oss-20b", "stage": "review", "task_id": "abc374_e", "condition": "C2", "retried": false, "exact": false, "reconstructed": true}
