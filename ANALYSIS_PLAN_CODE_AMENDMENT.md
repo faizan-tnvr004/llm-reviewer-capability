@@ -47,3 +47,21 @@ Three more requests never returned on 21 November 2026, all to Gemini (`gemini-3
 The effect on outcomes is the same as for the first incident: none. No logged row was edited or rescored. After each restart the run resumed at the interrupted (problem, condition), and only the request that had never returned was sent again. Token records were already being written per call (Section 3), so no token usage was lost in these three incidents.
 
 These four hangs (one on Groq, three on Gemini) share one cause: neither SDK puts a total time limit on a request. Fixing that would change how the runner handles provider calls mid-run, so it was not done. The weakness is reported as a limitation of this setup, and the restarts are reported as above.
+
+## 5. Remaining operational events and run completion (added 25 November 2026)
+
+None of these events changed a prompt, model, parameter, problem, grading rule or analysis. None edited, removed or rescored a logged row.
+
+- **Ollama auto-update, reverted before use**: the Ollama desktop app updated itself from the pinned 0.40.16 to 0.40.17 at about 07:20 UTC on 22 November 2026 (`upgrade.log`), between sessions. The server logs show every server that served C3 before then reported version 0.40.16. Before the 24 November session, the verified 0.40.16 installer (SHA-256 `84db4f75...912d`) was reinstalled, and the server was confirmed to report 0.40.16 with the pinned model digest `b158ded7...b576`. No C3 review was produced by 0.40.17.
+- **Gemini outages (`503 UNAVAILABLE`, "high demand")**: on 24 November 2026, Gemini refused requests for long periods. Each time, the runner's retries ran out and it made a clean `RateLimitStop` (Section 4.3, item 13) that scored nothing. A separate probe made tiny requests to Gemini, and the run was restarted with the same command once Gemini answered. From the third stop on, the restart waited for three successful probes in a row, 30 s apart.
+
+  | Stop (UTC) | Outcomes completed in that session | Restarted (UTC) | Manifest entry |
+  |---|---|---|---|
+  | 24 Nov 16:14:41 | 0 | 16:43:07 | 8 |
+  | 24 Nov 16:49:39 | 3 | 16:52:46 | 9 |
+  | 24 Nov 16:57:16 | 0 | 24 Nov 19:20:10 | 10 |
+
+- **Laptop standby**: the machine entered Modern Standby from 18:01 to 18:46 UTC on 24 November 2026, during the third outage, while no runner was active. Nothing was lost.
+- **Daily-quota stops**: the run made clean `DailyLimitExhausted` stops at Groq's 200,000 tokens-per-day cap at 10:07 UTC on 20 November and 12:28 UTC on 21 November 2026 (Section 4.3, item 3).
+
+**Run completion**: the main run finished at 20:59:11 UTC on 24 November 2026 (01:59 PKT on 25 November) with 625 outcome rows, one per (problem, condition), for all 125 pre-registered problems and C0–C4. No row is duplicated or missing, and no problem outside `problem_ids.json` appears. The log has 0 infrastructure retries. The runner made 10 starts (`run_manifest.json` entries 1–10), all from a tree whose tracked files were clean: entries 1–2 at `4f7999d` (`prereg-code-v1`), 3–6 at `91a31d7`, and 7–10 at `cacc569`. `91a31d7` changes only when token records are written (Section 3); `cacc569` changes only this file.

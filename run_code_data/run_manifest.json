@@ -1,0 +1,112 @@
+[
+  {
+    "utc_time": "2026-11-20T07:56:13.179783+00:00",
+    "git_commit": "4f7999d7adbafd3f524fe8e7e3b892c003528ad3",
+    "git_rev_parse_head": "4f7999d7adbafd3f524fe8e7e3b892c003528ad3",
+    "git_describe": "prereg-code-v1",
+    "git_status_porcelain": "?? run_code_data/.runner.lock",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-20T09:37:30.178835+00:00",
+    "git_commit": "4f7999d7adbafd3f524fe8e7e3b892c003528ad3",
+    "git_rev_parse_head": "4f7999d7adbafd3f524fe8e7e3b892c003528ad3",
+    "git_describe": "prereg-code-v1",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-21T09:20:30.042821+00:00",
+    "git_commit": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_rev_parse_head": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_describe": "prereg-code-v1-1-g91a31d7",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-21T10:08:25.158738+00:00",
+    "git_commit": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_rev_parse_head": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_describe": "prereg-code-v1-1-g91a31d7",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-21T11:27:18.756789+00:00",
+    "git_commit": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_rev_parse_head": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_describe": "prereg-code-v1-1-g91a31d7",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-21T12:17:36.521441+00:00",
+    "git_commit": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_rev_parse_head": "91a31d77e5eaa7b5d7b7a1d002caba46a6b6226d",
+    "git_describe": "prereg-code-v1-1-g91a31d7",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-24T16:12:03.323479+00:00",
+    "git_commit": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_rev_parse_head": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_describe": "prereg-code-v1-2-gcacc569",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-24T16:43:07.253026+00:00",
+    "git_commit": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_rev_parse_head": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_describe": "prereg-code-v1-2-gcacc569",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-24T16:52:46.451284+00:00",
+    "git_commit": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_rev_parse_head": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_describe": "prereg-code-v1-2-gcacc569",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  },
+  {
+    "utc_time": "2026-11-24T19:20:10.501322+00:00",
+    "git_commit": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_rev_parse_head": "cacc569c417646e34b10957130595b0f7233d63e",
+    "git_describe": "prereg-code-v1-2-gcacc569",
+    "git_status_porcelain": "?? run_code_data/.runner.lock\n?? run_code_data/log.jsonl\n?? run_code_data/programs.jsonl\n?? run_code_data/review_retries.jsonl\n?? run_code_data/run_manifest.json\n?? run_code_data/tokens.jsonl",
+    "prompts_hash": "d7b7203e7603dc5070bc42efdedc140de146caa88975f7ef1036d3271b56ca73",
+    "problem_ids_sha256": "246a18b49edc49c6bccefa5eeec7de76db4d214e64b6c2a0a7af58dbf33d6a7f",
+    "docker_image": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377",
+    "docker_image_digest": "python@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377"
+  }
+]
