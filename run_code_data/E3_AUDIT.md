@@ -3,7 +3,7 @@
 Pre-registered in `ANALYSIS_PLAN_CODE.md`, Section 7. The audit re-graded every distinct program in `run_code_data/programs.jsonl` in a second Docker pass (`scripts/audit_regrade.py`), using the same sandbox limits and early-exit rules and bypassing the grade cache. The second fingerprints are compared with every first-pass fingerprint recorded for the same program. Primary results use the first pass only, as pre-registered.
 
 - **Data**: `run_code_data/audit_regrade.json` (second pass) and `run_code_data/audit_regrade_recheck.json` (an extra third run of the disagreeing programs, described below).
-- **When**: from 21:08 UTC on 24 November 2026 to about 15:50 UTC on 25 November 2026. The laptop was asleep from 21:54 UTC on 24 November to about 14:49 UTC on 25 November, during program 85.
+- **When**: from 21:08 UTC on 24 November 2026 to about 15:45 UTC on 25 November 2026. The laptop was asleep from 21:54 UTC on 24 November to about 14:49 UTC on 25 November, during program 85.
 
 ## Result
 
