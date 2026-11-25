@@ -628,6 +628,8 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
         "",
         "Rejection classification uses normalized AST hash (`ast_hash`) as the primary definition of program identity (ignoring comments, docstrings, and formatting). Text-hash counts (`final_code_hash == a0_code_hash`) are reported alongside in brackets `[text]`.",
         "",
+        "In this table, \"Other\" means the program changed and its correctness did not flip: wrong to a different wrong program, *or correct to a different correct program*. In code the second case is common, because the executor nearly always rewrites a program it is told is wrong. For the same reason, `rej_quality.py`'s \"corrected false-rejection rate\" ((damage + nc-right) / correct A0) undercounts false rejections on this log, since a correct program rewritten into another correct one counts as \"other\". The pre-registered false-rejection rate is the one in Section 2 (rejected correct A0 / correct A0).",
+        "",
         "| Condition | Rejections | Repair (Useful) | Damage (Harmful) | No-Change Wrong (Ignored) [AST / Text] | No-Change Right (Harmless FR) [AST / Text] | Other |",
         "|---|---|---|---|---|---|---|",
     ])
@@ -674,20 +676,50 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
         all_tok = f"{token_stats_all[c]['mean_tok']:.0f}" if token_stats_all else "n/a"
         md_lines.append(f"| **{c}** | {tm['n_timeouts']}/{tm['total']} | {tm['rate']*100:.1f}% | {tk['mean_tok']:.0f} | {cpe} | {all_tok} |")
 
-    # Math vs Code comparison table
+    # Math vs Code comparison table. The verdict column is computed from this
+    # log, so it always matches the numbers next to it.
+    mc_by_pair = {m["pair"]: m for m in mcnemar_results}
+
+    def pct(k, n):
+        return f"{k}/{n} ({100 * k / n:.0f}%)" if n else f"{k}/0"
+
+    c1 = reviewer_stats.get("C1", {})
+    c1_rb = rejection_breakdown.get("C1", {}).get("counts", {})
+    n_fr = c1.get("n_rej_right", 0)
+    k_fr = sum(1 for r in rows if r["condition"] == "C1" and r.get("a0_correct") and r.get("verdict") == "REJECT")
+    n_right = c1.get("n_right_a0", 0)
+    k_same = c1_rb.get("no_change_right", 0)
+    k_dmg = c1_rb.get("damage", 0)
+    n_changed = n_fr - k_same
+    m1, m2 = mc_by_pair.get("C0 vs C1", {}), mc_by_pair.get("C0 vs C2", {})
+
+    def sig_verdict(m, replicate_if_sig):
+        if not m:
+            return "not evaluable"
+        sig = m.get("p_adj", 1.0) < 0.05 and m.get("diff", 0) > 0
+        detail = f"{m['diff']*100:+.1f} pts, b/c = {m['b_val']}/{m['c_val']}, Holm p = {m.get('p_adj', 1.0):.4f}"
+        if sig == replicate_if_sig:
+            return f"Replicated ({detail})"
+        return f"Not replicated ({detail})"
+
+    frr = (k_fr / n_right) if n_right else 0.0
+    c4 = reviewer_stats.get("C4", {})
+    c4_fr = sum(1 for r in rows if r["condition"] == "C4" and r.get("a0_correct") and r.get("verdict") == "REJECT")
     md_lines.extend([
         "",
         "## 5. Olympiad Math vs Executable Code Comparison",
         "",
+        "The verdict column is computed from this log. Math figures are the published math-study results.",
+        "",
         "| Finding / Metric | Math Study (Olympiad) | Code Study (LiveCodeBench) | Replication Finding |",
         "|---|---|---|---|",
-        f"| Baseline Executor Accuracy (C0) | 52% (52/100) | {cond_stats.get('C0', {}).get('accuracy', 0)*100:.1f}% | Baseline calibration |",
-        f"| Self-Review Delta (C1 vs C0) | +6.0% (52% -> 58%, p=0.1460 ns) | {cond_stats.get('C1', {}).get('delta', 0)*100:+.1f}% | Replicates lack of significant gain |",
-        f"| Cross-Family Delta (C2 vs C0) | +12.0% (52% -> 64%, p=0.0005 ***) | {cond_stats.get('C2', {}).get('delta', 0)*100:+.1f}% | Test cross-family superiority |",
-        f"| Self-Review False Rejection Rate (C1 FRR) | 35% (18/52 correct answers) | {reviewer_stats.get('C1', {}).get('frr', 0)*100:.1f}% | Test high false rejection rate |",
-        f"| Ignored False Rejections | 83% (15 of 18 unchanged) | {rejection_breakdown.get('C1', {}).get('counts', {}).get('no_change_right', 0)} / {reviewer_stats.get('C1', {}).get('n_rej_right', 0)} | Test inertia on false critiques |",
-        f"| Damage on False Rejection | 100% of changes broke code (3/3) | {rejection_breakdown.get('C1', {}).get('counts', {}).get('damage', 0)} damaged | Test destructive revision effect |",
-        f"| Public Sample Tests Reviewer (C4) | N/A (code-only condition) | {cond_stats.get('C4', {}).get('accuracy', 0)*100:.1f}% acc (FRR={reviewer_stats.get('C4', {}).get('frr', 0)*100:.1f}%) | Deterministic test-based baseline |",
+        f"| Baseline Executor Accuracy (C0) | 52% (52/100) | {cond_stats.get('C0', {}).get('accuracy', 0)*100:.1f}% ({cond_stats.get('C0', {}).get('correct', 0)}/{cond_stats.get('C0', {}).get('n', 0)}) | Baselines comparable |",
+        f"| Self-Review Delta (C1 vs C0) | +6.0% (52% -> 58%, p=0.1460 ns) | {cond_stats.get('C1', {}).get('delta', 0)*100:+.1f}% | {sig_verdict(m1, False).replace('Replicated', 'Replicated: no significant gain in either study')} |",
+        f"| Cross-Family Delta (C2 vs C0) | +12.0% (52% -> 64%, p=0.0005 ***) | {cond_stats.get('C2', {}).get('delta', 0)*100:+.1f}% | {sig_verdict(m2, True)} |",
+        f"| Self-Review False Rejection Rate (C1 FRR) | 35% (18/52 correct answers) | {pct(k_fr, n_right)} | {'Replicated' if frr >= 0.20 else 'Not replicated'} (pre-registered threshold 20%) |",
+        f"| Ignored False Rejections (code unchanged, AST hash) | 83% (15 of 18 unchanged) | {pct(k_same, n_fr)} | {'Replicated' if n_fr and k_same / n_fr > 0.5 else f'Not replicated: the executor rewrote {n_changed} of {n_fr} correct programs'} |",
+        f"| Damage on False Rejection (changed and broken) | 100% of changes broke the answer (3/3) | {pct(k_dmg, n_changed)} of changed programs broke | {'Partly replicated: revisions still damage some correct programs, at a lower rate' if 0 < k_dmg < n_changed else ('Replicated' if n_changed and k_dmg == n_changed else 'Not replicated: no damage')} |",
+        f"| Public Sample Tests Reviewer (C4) | N/A (code-only condition) | {cond_stats.get('C4', {}).get('accuracy', 0)*100:.1f}% accuracy; FRR {pct(c4_fr, c4.get('n_right_a0', 0))}; false accepts {c4_false_accept_count}/{c4_false_accept_total} | New in the code study |",
         "",
     ])
 

@@ -135,3 +135,54 @@ record of the project's methodological trajectory.
   none. The 29% empty rate mentioned in `ANALYSIS_PLAN_AMENDMENT.md` §9 came
   from the earlier run, before reviewer input was truncated to fit Groq's
   8 000 TPM cap; every review was regenerated after that change.
+
+## Code Extension (LiveCodeBench)
+
+The same execute–review–revise design, applied to executable code. The `code-extension` branch adds one condition, **C4**, in which the problem's public sample tests act as the reviewer.
+
+- **Pre-registration**: [ANALYSIS_PLAN_CODE.md](ANALYSIS_PLAN_CODE.md), tagged `prereg-code-v1` before the main run. Deviations and every run incident are in [ANALYSIS_PLAN_CODE_AMENDMENT.md](ANALYSIS_PLAN_CODE_AMENDMENT.md).
+- **Problems**: all 125 eligible LiveCodeBench `code_generation_lite` problems (stdin, medium or hard, contests from 2024-10-01 to 2025-04-06, no special judge, at least 10 hidden tests, calibration problems excluded). A program counts as correct only if it passes every hidden test, run in a network-less Docker sandbox with a 6 s limit per test.
+- **Models**: the executor is `gemini-3.1-flash-lite`.
+  - C1: self-review, by the same model.
+  - C2: `openai/gpt-oss-20b` on Groq.
+  - C3: Llama 3.1 8B Instruct (`llama3.1:8b-instruct-q8_0`), run locally in Ollama 0.40.16, because Groq retired `llama-3.1-8b-instant`.
+  - C4: the public sample tests, with no model.
+- **Results**: [run_code_data/RESULTS.md](run_code_data/RESULTS.md), produced by `analyze_code.py`. The second-pass audit (E3) is in [run_code_data/E3_AUDIT.md](run_code_data/E3_AUDIT.md).
+
+| Condition | Reviewer | Accuracy | Δ vs C0 | Exact McNemar vs C0 (raw / Holm) |
+|---|---|---|---|---|
+| C0 | None | 45.6% (57/125) | — | — |
+| C1 | Self-review (Gemini) | 48.0% (60/125) | +2.4 pts | 0.549 / 1.000 |
+| C2 | Cross-family (GPT-OSS-20B) | 50.4% (63/125) | +4.8 pts | 0.109 / 0.438 |
+| C3 | Weak (Llama 3.1 8B) | 45.6% (57/125) | 0.0 pts | 1.000 / 1.000 |
+| C4 | Public sample tests | 50.4% (63/125) | +4.8 pts | 0.031 / 0.156 |
+
+Pre-registered hypotheses:
+
+- **H1, supported**: self-review falsely rejected 20 of 57 correct programs (35.1%, Wilson 95% CI 24–48%), the same rate as in the math study (35%).
+- **H2, not supported**: after a false self-rejection, the executor rewrote 19 of 20 correct programs and left only 1 unchanged. In math it ignored 15 of 18. 4 of the 19 rewrites broke a correct program.
+- **H3, not supported**: the cross-family reviewer's +4.8 point gain (2 programs broken, 8 fixed) is not significant (Holm p = 0.44). The math study's significant cross-family gain did not replicate on code.
+- **H4, supported**: the public-test reviewer falsely rejected 0 of 57 correct programs, but 19 of 68 wrong programs (27.9%) passed every sample test.
+
+No difference here reaches significance after Holm correction across the five pre-registered comparisons. With N = 125, effects of a few points cannot be ruled out; see the intervals in `RESULTS.md`.
+
+To reproduce the analysis (no API calls):
+
+```bash
+python analyze_code.py
+```
+```bash
+python scripts/audit_regrade.py
+```
+
+The math scripts also accept the code log, for example `python mcnemar.py --log run_code_data/log.jsonl --conds C0 C1 C2 C3 C4`.
+
+### Code-study limitations
+
+- **Single executor and benchmark**: all results depend on `gemini-3.1-flash-lite` and on LiveCodeBench problems from late 2024 to early 2025. The executor's stated knowledge cutoff is January 2025, so contamination cannot be excluded. The pre- and post-cutoff split (E2) found no difference in A0 accuracy (34/78 vs 23/47, Fisher p = 0.58).
+- **C3 is not the math study's C3**: it uses the same Llama 3.1 8B Instruct weights, but served locally at Q8_0 instead of on Groq.
+- **Empty gpt-oss reviews**: 12 of 125 C2 reviews (9.6%) were empty or unparseable after one retry and were scored as ACCEPT, as pre-registered.
+- **Borderline timeouts**: two A0 programs have a slowest test of 5–7 s against the 6 s limit. They passed on the first (primary) pass, timed out on the audit pass, and passed again on a third run (E3).
+- **Incomplete token counts**: exact provider counts are missing for 28 problems after a manual restart. Token cost is reported on the 97 problems with exact counts, and separately with chars/4 estimates for the rest.
+- **Run interruptions**: four provider requests never returned and had to be killed and restarted, and there were three Gemini outages. None of these changed an outcome; all are listed in the amendment.
+- **`rej_quality.py` on code**: its "corrected false-rejection rate" counts a correct program rewritten into a different correct one as "other", so it undercounts false rejections on code. Use the false-rejection rate in `RESULTS.md`.

@@ -38,6 +38,8 @@
 
 Rejection classification uses normalized AST hash (`ast_hash`) as the primary definition of program identity (ignoring comments, docstrings, and formatting). Text-hash counts (`final_code_hash == a0_code_hash`) are reported alongside in brackets `[text]`.
 
+In this table, "Other" means the program changed and its correctness did not flip: wrong to a different wrong program, *or correct to a different correct program*. In code the second case is common, because the executor nearly always rewrites a program it is told is wrong. For the same reason, `rej_quality.py`'s "corrected false-rejection rate" ((damage + nc-right) / correct A0) undercounts false rejections on this log, since a correct program rewritten into another correct one counts as "other". The pre-registered false-rejection rate is the one in Section 2 (rejected correct A0 / correct A0).
+
 | Condition | Rejections | Repair (Useful) | Damage (Harmful) | No-Change Wrong (Ignored) [AST / Text] | No-Change Right (Harmless FR) [AST / Text] | Other |
 |---|---|---|---|---|---|---|
 | **C0** | 0 | - | - | - | - | - |
@@ -79,15 +81,17 @@ Tokens use exact provider usage on the 97 problems whose records survived (Amend
 
 ## 5. Olympiad Math vs Executable Code Comparison
 
+The verdict column is computed from this log. Math figures are the published math-study results.
+
 | Finding / Metric | Math Study (Olympiad) | Code Study (LiveCodeBench) | Replication Finding |
 |---|---|---|---|
-| Baseline Executor Accuracy (C0) | 52% (52/100) | 45.6% | Baseline calibration |
-| Self-Review Delta (C1 vs C0) | +6.0% (52% -> 58%, p=0.1460 ns) | +2.4% | Replicates lack of significant gain |
-| Cross-Family Delta (C2 vs C0) | +12.0% (52% -> 64%, p=0.0005 ***) | +4.8% | Test cross-family superiority |
-| Self-Review False Rejection Rate (C1 FRR) | 35% (18/52 correct answers) | 35.1% | Test high false rejection rate |
-| Ignored False Rejections | 83% (15 of 18 unchanged) | 1 / 20 | Test inertia on false critiques |
-| Damage on False Rejection | 100% of changes broke code (3/3) | 4 damaged | Test destructive revision effect |
-| Public Sample Tests Reviewer (C4) | N/A (code-only condition) | 50.4% acc (FRR=0.0%) | Deterministic test-based baseline |
+| Baseline Executor Accuracy (C0) | 52% (52/100) | 45.6% (57/125) | Baselines comparable |
+| Self-Review Delta (C1 vs C0) | +6.0% (52% -> 58%, p=0.1460 ns) | +2.4% | Replicated: no significant gain in either study (+2.4 pts, b/c = 4/7, Holm p = 1.0000) |
+| Cross-Family Delta (C2 vs C0) | +12.0% (52% -> 64%, p=0.0005 ***) | +4.8% | Not replicated (+4.8 pts, b/c = 2/8, Holm p = 0.4375) |
+| Self-Review False Rejection Rate (C1 FRR) | 35% (18/52 correct answers) | 20/57 (35%) | Replicated (pre-registered threshold 20%) |
+| Ignored False Rejections (code unchanged, AST hash) | 83% (15 of 18 unchanged) | 1/20 (5%) | Not replicated: the executor rewrote 19 of 20 correct programs |
+| Damage on False Rejection (changed and broken) | 100% of changes broke the answer (3/3) | 4/19 (21%) of changed programs broke | Partly replicated: revisions still damage some correct programs, at a lower rate |
+| Public Sample Tests Reviewer (C4) | N/A (code-only condition) | 50.4% accuracy; FRR 0/57 (0%); false accepts 19/68 | New in the code study |
 
 ## 6. Pre-Registered Hypotheses
 
