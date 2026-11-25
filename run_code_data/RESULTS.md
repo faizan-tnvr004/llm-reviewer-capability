@@ -114,7 +114,7 @@ The verdict column is computed from this log. Math figures are the published mat
 | **H1** | supported | C1 FRR 20/57 = 35.1% |
 | **H2** | not supported | unchanged after C1 false rejection: AST 1/20, text 0/20 |
 | **H3** | not supported | C0 45.6% vs C2 50.4%, b=2 c=8, p=0.1094, Holm p=0.4375 |
-| **H4** | supported | C4 FRR 0/57 = 0.0% (Wilson 95% upper bound 6.3%; the pre-registered criterion 'FRR <= 5%' is applied to the point estimate, as for H1); false accepts 19/68 |
+| **H4** | supported | C4 FRR 0/57 = 0.0% (Wilson 95% upper bound 6.3%. The frozen plan's criterion 'FRR <= 5%' does not say whether it means the point estimate or an interval bound; the verdict uses the point estimate, which meets it, while the upper bound would not); false accepts 19/68 |
 
 ## 7. Exploratory E2: Temporal Sensitivity (boundary 2025-01-31)
 
@@ -132,5 +132,5 @@ Exploratory and non-confirmatory. Post-cutoff hypothesis checks are low-n sensit
 | H1 | supported | C1 FRR 7/23 = 30.4% |
 | H2 | inconclusive | unchanged after C1 false rejection: AST 0/7, text 0/7 (low-n); fewer than 10 false rejections |
 | H3 | not supported | C0 48.9% vs C2 51.1%, b=1 c=2, p=1.0000, Holm p=1.0000 |
-| H4 | supported | C4 FRR 0/23 = 0.0% (Wilson 95% upper bound 14.3%; the pre-registered criterion 'FRR <= 5%' is applied to the point estimate, as for H1); false accepts 9/24 |
+| H4 | supported | C4 FRR 0/23 = 0.0% (Wilson 95% upper bound 14.3%. The frozen plan's criterion 'FRR <= 5%' does not say whether it means the point estimate or an interval bound; the verdict uses the point estimate, which meets it, while the upper bound would not); false accepts 9/24 |
 

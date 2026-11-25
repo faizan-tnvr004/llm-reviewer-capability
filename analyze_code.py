@@ -309,8 +309,9 @@ def evaluate_hypotheses(rows: list[dict]) -> dict:
                      "k_fr": k_fr, "n_right": len(right4), "frr": frr,
                      "k_fa": k_fa, "n_wrong": len(wrong4),
                      "text": (f"C4 FRR {k_fr}/{len(right4)} = {frr*100:.1f}%{_low_n(len(right4))} "
-                              f"(Wilson 95% upper bound {wilson_ci(k_fr, len(right4))[1]*100:.1f}%; the pre-registered "
-                              f"criterion 'FRR <= 5%' is applied to the point estimate, as for H1); "
+                              f"(Wilson 95% upper bound {wilson_ci(k_fr, len(right4))[1]*100:.1f}%. The frozen plan's criterion "
+                              f"'FRR <= 5%' does not say whether it means the point estimate or an interval bound; "
+                              f"the verdict uses the point estimate, which meets it, while the upper bound would not); "
                               f"false accepts {k_fa}/{len(wrong4)}{_low_n(len(wrong4))}")}
     else:
         res["H4"] = {"verdict": "not evaluable", "text": "C4 missing"}
