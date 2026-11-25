@@ -1,0 +1,15 @@
+items labelled by the human: 30 of 30
+raw agreement: 19/30 (63.3%)
+Cohen's kappa: 0.046
+human: {'specific': 19, 'vague': 11} | agent: {'specific': 28, 'vague': 2}
+  disagree item 3: human=vague agent=specific
+  disagree item 31: human=vague agent=specific
+  disagree item 58: human=vague agent=specific
+  disagree item 66: human=vague agent=specific
+  disagree item 74: human=vague agent=specific
+  disagree item 96: human=vague agent=specific
+  disagree item 102: human=specific agent=vague
+  disagree item 116: human=vague agent=specific
+  disagree item 126: human=vague agent=specific
+  disagree item 132: human=vague agent=specific
+  disagree item 141: human=vague agent=specific

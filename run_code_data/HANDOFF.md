@@ -23,7 +23,7 @@ Self-review falsely rejected 20 of 57 correct programs (35.1%), the same rate as
   - H1 and H4 still hold on the 47 post-cutoff problems.
   - H2 is inconclusive there (7 false rejections, fewer than 10).
   - H3 is not supported there.
-- **E1 (exploratory, agent-labelled)**: a blind LLM labeller rated 147 of 154 C1–C3 critiques `specific` and 7 `vague`. The vague ones are mostly from self-review: C1 6/75, C2 0/76, C3 1/3. The executor revised its code after 146 of 147 specific critiques and 7 of 7 vague ones (AST hash), so adoption is near-total and specificity barely varies. The 30-item human agreement check is not done yet. Report kappa with E1, or state that E1 is agent-labelled with no human check (Amendment 1, Section 6). Full output: `run_code_data/e1/E1_RESULTS_agent.txt`.
+- **E1 (exploratory)**: the executor changed its program after 153 of 154 C1–C3 rejections, so specificity cannot predict adoption, whoever labels it. The blind LLM labeller's specificity labels (147 specific / 7 vague) **failed the human check**: 19/30 agreement, Cohen's kappa = 0.046. Don't report them as a specificity measure. On the 30 human-labelled items, adoption was 19/19 for specific and 11/11 for vague, and vague critiques by condition were C1 2/15, C2 7/13, C3 2/2 (descriptive, low-n). See `run_code_data/e1/E1_SUMMARY.md` and Amendment 1, Section 6a.
 - **E3 (exploratory)**: 3 of 328 programs (21 of 1,250 records) disagreed between passes, all PASS to TIMEOUT.
 
 ## Three surprising observations
