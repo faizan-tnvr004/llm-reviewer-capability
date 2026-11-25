@@ -19,19 +19,30 @@ proportion of discordant pairs favouring B.
 Run from repo root:  python mcnemar.py
 No API calls; reads the existing log.
 """
-import json, os
+import argparse, json, os
 from itertools import combinations
 from math import comb
 
-LOG = os.path.join("run_experiment_data", "log.jsonl")
-rows = [json.loads(l) for l in open(LOG, encoding="utf-8") if l.strip()]
+DEFAULT_LOG = os.path.join("run_experiment_data", "log.jsonl")
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="McNemar's test on paired reviewer conditions.")
+    p.add_argument("--log", default=DEFAULT_LOG, help="Path to experiment log")
+    p.add_argument("--conds", nargs="*", default=None, help="Conditions to include")
+    return p.parse_args()
+
+
+args = parse_args()
+rows = [json.loads(l) for l in open(args.log, encoding="utf-8") if l.strip()]
 
 # task_id -> condition -> final_correct
 by_task = {}
 for r in rows:
     by_task.setdefault(r["task_id"], {})[r["condition"]] = bool(r["final_correct"])
 
-conds = sorted({r["condition"] for r in rows})
+all_conds = sorted({r["condition"] for r in rows})
+conds = [c for c in args.conds if c in all_conds] if args.conds else all_conds
 # keep only tasks present in EVERY condition (true paired set)
 complete = {t: d for t, d in by_task.items() if all(c in d for c in conds)}
 print(f"{len(by_task)} tasks in log; {len(complete)} complete across all "

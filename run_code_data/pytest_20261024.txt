@@ -1,0 +1,128 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.0, pytest-9.1.1, pluggy-1.6.0 -- C:\Paper\multiagent-error-diversity\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Paper\multiagent-error-diversity
+configfile: pytest.ini
+plugins: anyio-4.15.1
+collecting ... collected 92 items
+
+tests/test_code.py::test_all PASSED                                      [  1%]
+tests/test_code_exec.py::test_normalize_output_basic PASSED              [  2%]
+tests/test_code_exec.py::test_normalize_output_preserves_internal_blanks PASSED [  3%]
+tests/test_code_exec.py::test_normalize_output_adds_trailing_newline PASSED [  4%]
+tests/test_code_exec.py::test_code_hash_deterministic PASSED             [  5%]
+tests/test_code_exec.py::test_code_hash_normalizes_whitespace PASSED     [  6%]
+tests/test_code_exec.py::test_code_hash_length PASSED                    [  7%]
+tests/test_code_exec.py::test_ast_hash_comment_only PASSED               [  8%]
+tests/test_code_exec.py::test_ast_hash_docstring_only PASSED             [  9%]
+tests/test_code_exec.py::test_ast_hash_rename_changes PASSED             [ 10%]
+tests/test_code_exec.py::test_ast_hash_real_logic_changes PASSED         [ 11%]
+tests/test_code_exec.py::test_ast_hash_syntax_error_fallback PASSED      [ 13%]
+tests/test_code_exec.py::test_infra_path_a_host_backstop_retry_succeeds PASSED [ 14%]
+tests/test_code_exec.py::test_infra_path_a_host_backstop_retry_also_hits_backstop_scores_timeout PASSED [ 15%]
+tests/test_code_exec.py::test_infra_path_a_host_backstop_retry_returns_124_scores_timeout PASSED [ 16%]
+tests/test_code_exec.py::test_infra_path_b_cli_failures_and_daemon_error_strings PASSED [ 17%]
+tests/test_code_exec.py::test_infra_path_b_retry_twice_with_backoff_then_raise_sandbox_unavailable PASSED [ 18%]
+tests/test_code_exec.py::test_infra_path_b_retry_succeeds_on_second_attempt PASSED [ 19%]
+tests/test_code_exec.py::test_infra_failure_never_scored_as_crash_fail_or_timeout PASSED [ 20%]
+tests/test_code_exec.py::test_real_docker_bin_nonexistent_raises_sandbox_unavailable_not_crash PASSED [ 21%]
+tests/test_code_exec.py::test_is_git_clean_fail_closed PASSED            [ 22%]
+tests/test_code_exec.py::test_append_run_manifest_appends_and_never_overwrites PASSED [ 23%]
+tests/test_constraint.py::test_all PASSED                                [ 25%]
+tests/test_docker_integration.py::test_docker_correct_program PASSED     [ 26%]
+tests/test_docker_integration.py::test_docker_wrong_output PASSED        [ 27%]
+tests/test_docker_integration.py::test_docker_crash PASSED               [ 28%]
+tests/test_docker_integration.py::test_docker_timeout_infinite_loop PASSED [ 29%]
+tests/test_docker_integration.py::test_docker_outbound_network_attempt_fails PASSED [ 30%]
+tests/test_docker_integration.py::test_docker_no_host_env_vars_visible PASSED [ 31%]
+tests/test_docker_integration.py::test_docker_readonly_fs_enforced PASSED [ 32%]
+tests/test_docker_integration.py::test_docker_memory_limit_1gb_killed PASSED [ 33%]
+tests/test_docker_integration.py::test_docker_fork_bomb_bounded PASSED   [ 34%]
+tests/test_docker_integration.py::test_docker_trailing_space_passes PASSED [ 35%]
+tests/test_docker_integration.py::test_docker_timeout_no_leftover_container PASSED [ 36%]
+tests/test_docker_integration.py::test_docker_cleanup_stale_containers_sweep PASSED [ 38%]
+tests/test_docker_integration.py::test_docker_timeout_enforced_under_7_5s PASSED [ 39%]
+tests/test_docker_integration.py::test_docker_program_passes_within_timeout PASSED [ 40%]
+tests/test_docker_integration.py::test_docker_problem_budget_exhaustion_stops_early PASSED [ 41%]
+tests/test_harness.py::test_all PASSED                                   [ 42%]
+tests/test_livecodebench.py::test_decode_test_cases_json_string PASSED   [ 43%]
+tests/test_livecodebench.py::test_decode_test_cases_pickle_compressed PASSED [ 44%]
+tests/test_livecodebench.py::test_decode_test_cases_empty_and_invalid PASSED [ 45%]
+tests/test_livecodebench.py::test_is_special_judge_statement PASSED      [ 46%]
+tests/test_livecodebench.py::test_same_seed_gives_same_ids PASSED        [ 47%]
+tests/test_livecodebench.py::test_different_seeds_give_different_orders PASSED [ 48%]
+tests/test_livecodebench.py::test_problem_ids_round_trip PASSED          [ 50%]
+tests/test_livecodebench.py::test_no_functional_or_special_judge_in_sample PASSED [ 51%]
+tests/test_livecodebench.py::test_extract_program PASSED                 [ 52%]
+tests/test_livecodebench.py::test_normalize_code PASSED                  [ 53%]
+tests/test_livecodebench.py::test_grade_lcb_fail_fingerprint_semantics PASSED [ 54%]
+tests/test_math.py::test_all PASSED                                      [ 55%]
+tests/test_math_robustness.py::test_all PASSED                           [ 56%]
+tests/test_pipeline.py::test_all PASSED                                  [ 57%]
+tests/test_pipeline_code.py::test_all PASSED                             [ 58%]
+tests/test_pipeline_code.py::test_budget_exhaustion_scores_timeout PASSED [ 59%]
+tests/test_pipeline_code.py::test_daily_limit_exhausted_stops_without_accept PASSED [ 60%]
+tests/test_pipeline_code.py::test_resume_safety_injected_sandbox_unavailable PASSED [ 61%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[Rate limit reached for model `llama-3.1-8b-instant` on tokens per day (TPD): Limit 500000, Used 500001.-True] PASSED [ 63%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[Rate limit reached for requests per day (RPD): Limit 1000, Used 1000.-True] PASSED [ 64%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[ResourceExhausted: 429 Quota exceeded for quota metric 'GenerateContent requests' and limit 'GenerateContent requests per day'-True] PASSED [ 65%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[429 daily quota exceeded - requests per day limit reached-True] PASSED [ 66%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[Rate limit reached for model `openai/gpt-oss-20b` on tokens per minute (TPM): Limit 8000, Used 8192.-False] PASSED [ 67%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[Rate limit reached for requests per minute (RPM): Limit 30, Used 30.-False] PASSED [ 68%]
+tests/test_pipeline_code.py::test_rate_limit_classification_looks_daily[Rate limit exceeded. Please wait 15 seconds.-False] PASSED [ 69%]
+tests/test_pipeline_code.py::test_exhausted_per_minute_retries_stops_cleanly_scores_nothing PASSED [ 70%]
+tests/test_pipeline_code.py::test_looks_daily_realistic_reconstructed_bodies[Gemini RESOURCE_EXHAUSTED daily (reconstructed, not captured)-{"error": {"code": 429, "message": "Resource has been exhausted (e.g. check quota).", "status": "RESOURCE_EXHAUSTED", "details": [{"@type": "type.googleapis.com/google.rpc.QuotaFailure", "violations": [{"subject": "project:1234567890", "description": "Quota exceeded for quota metric 'GenerateContent requests' and limit 'GenerateContent requests per day'", "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}]}}-True] PASSED [ 71%]
+tests/test_pipeline_code.py::test_looks_daily_realistic_reconstructed_bodies[Gemini RESOURCE_EXHAUSTED per-minute retryable (reconstructed, not captured)-{"error": {"code": 429, "message": "Resource has been exhausted (e.g. check quota).", "status": "RESOURCE_EXHAUSTED", "details": [{"@type": "type.googleapis.com/google.rpc.QuotaFailure", "violations": [{"subject": "project:1234567890", "description": "Quota exceeded for quota metric 'GenerateContent requests' and limit 'GenerateContent requests per minute'", "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"}]}]}}-False] PASSED [ 72%]
+tests/test_pipeline_code.py::test_looks_daily_realistic_reconstructed_bodies[Groq tokens per day (TPD) daily (reconstructed, not captured)-{"error": {"message": "Rate limit reached for model `llama-3.1-8b-instant` on tokens per day (TPD): Limit 500000, Used 500001, Requested 120. Please try again tomorrow.", "type": "tokens", "code": "rate_limit_exceeded"}}-True] PASSED [ 73%]
+tests/test_pipeline_code.py::test_looks_daily_realistic_reconstructed_bodies[Groq tokens per minute (TPM) retryable (reconstructed, not captured)-{"error": {"message": "Rate limit reached for model `openai/gpt-oss-20b` on tokens per minute (TPM): Limit 8000, Used 7950, Requested 100. Please try again in 15s.", "type": "tokens", "code": "rate_limit_exceeded"}}-False] PASSED [ 75%]
+tests/test_pipeline_code.py::test_call_with_retry_bounds_per_minute_retries_exhausted PASSED [ 76%]
+tests/test_pipeline_code.py::test_ambiguous_persistent_429_clean_stop_zero_rows_no_traceback PASSED [ 77%]
+tests/test_pipeline_code.py::test_run_log_load_ignores_truncated_final_line_and_warns PASSED [ 78%]
+tests/test_pipeline_code.py::test_resume_after_truncated_log_equals_uninterrupted_run PASSED [ 79%]
+tests/test_pipeline_code.py::test_analyze_code_deduplicates_programs_by_task_condition_stage PASSED [ 80%]
+tests/test_pipeline_code.py::test_analyze_critiques_deduplicates_programs_by_task_condition_stage PASSED [ 81%]
+tests/test_pipeline_code.py::test_single_runner_lock_alive_pid_refuses_and_dead_pid_recovers PASSED [ 82%]
+tests/test_pipeline_code.py::test_single_runner_cleanup_stale_containers_runs_only_after_lock_held PASSED [ 83%]
+tests/test_pipeline_code.py::test_cli_run_dir_and_ids_file_artifacts_routing PASSED [ 84%]
+tests/test_pipeline_code.py::test_grade_caching_by_task_id_and_code_hash_reuses_identical_grade PASSED [ 85%]
+tests/test_pipeline_code.py::test_analyze_code_integrity_check_blocks_corrupted_fixture PASSED [ 86%]
+tests/test_pipeline_code.py::test_rate_limit_stop_prints_raw_error_and_matched_marker PASSED [ 88%]
+tests/test_pipeline_code.py::test_math_path_grade_numeric_is_never_cached PASSED [ 89%]
+tests/test_pipeline_code.py::test_analyze_code_hypotheses_and_e2_on_mock_log PASSED [ 90%]
+tests/test_pipeline_code.py::test_audit_regrade_reports_fingerprint_disagreements_on_mock_programs PASSED [ 91%]
+tests/test_pipeline_code.py::test_extra_code_log_records_final_program_and_its_public_result PASSED [ 92%]
+tests/test_prompts_code.py::test_prompts_contain_required_placeholders PASSED [ 93%]
+tests/test_prompts_code.py::test_c4_templates_have_placeholders PASSED   [ 94%]
+tests/test_prompts_code.py::test_review_prompt_verdict_format PASSED     [ 95%]
+tests/test_prompts_code.py::test_prompts_hash_deterministic PASSED       [ 96%]
+tests/test_prompts_code.py::test_prompts_hash_is_sha256 PASSED           [ 97%]
+tests/test_prompts_code.py::test_answer_instruction_mentions_stdin_stdout PASSED [ 98%]
+tests/test_prompts_code.py::test_review_prompt_forbids_running_code PASSED [100%]
+
+============================== warnings summary ===============================
+tests/test_pipeline_code.py::test_resume_after_truncated_log_equals_uninterrupted_run
+  C:\Paper\multiagent-error-diversity\src\harness.py:136: UserWarning: RunLog.load: ignoring truncated final line in C:\Paper\multiagent-error-diversity\tests\..\scratch_test_trunc_resume\resume\log.jsonl: {"task_id": "prob_2", "condition": "C0", "ground_truth": "PA... (Unterminated string starting at: line 1 column 58 (char 57))
+    warnings.warn(
+
+tests/test_pipeline_code.py::test_resume_after_truncated_log_equals_uninterrupted_run
+  C:\Paper\multiagent-error-diversity\src\harness.py:136: UserWarning: RunLog.load: ignoring truncated final line in C:\Paper\multiagent-error-diversity\tests\..\scratch_test_trunc_resume\resume\log.jsonl: {"task_id": "prob_2", "condition": "C0", "ground_truth": "PA... (Invalid control character at: line 1 column 61 (char 60))
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================ slowest 15 durations =============================
+27.73s call     tests/test_livecodebench.py::test_no_functional_or_special_judge_in_sample
+25.56s call     tests/test_livecodebench.py::test_same_seed_gives_same_ids
+20.08s call     tests/test_code_exec.py::test_real_docker_bin_nonexistent_raises_sandbox_unavailable_not_crash
+11.33s call     tests/test_code.py::test_all
+8.06s call     tests/test_livecodebench.py::test_different_seeds_give_different_orders
+6.98s call     tests/test_docker_integration.py::test_docker_timeout_enforced_under_7_5s
+3.83s call     tests/test_docker_integration.py::test_docker_program_passes_within_timeout
+3.49s call     tests/test_docker_integration.py::test_docker_problem_budget_exhaustion_stops_early
+2.54s call     tests/test_constraint.py::test_all
+2.26s call     tests/test_livecodebench.py::test_problem_ids_round_trip
+2.24s call     tests/test_docker_integration.py::test_docker_memory_limit_1gb_killed
+1.88s call     tests/test_docker_integration.py::test_docker_timeout_no_leftover_container
+1.80s call     tests/test_docker_integration.py::test_docker_fork_bomb_bounded
+1.57s call     tests/test_docker_integration.py::test_docker_timeout_infinite_loop
+1.43s call     tests/test_harness.py::test_all
+================= 92 passed, 2 warnings in 133.69s (0:02:13) ==================

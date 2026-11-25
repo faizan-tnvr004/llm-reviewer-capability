@@ -1,0 +1,772 @@
+[
+ {
+  "item_id": 1,
+  "label": "specific",
+  "reason": "Program prints Yes without matching validation"
+ },
+ {
+  "item_id": 2,
+  "label": "specific",
+  "reason": "Enumerates C(100,50) subsets"
+ },
+ {
+  "item_id": 3,
+  "label": "specific",
+  "reason": "O(N^2) pair checks at N=2e5"
+ },
+ {
+  "item_id": 4,
+  "label": "specific",
+  "reason": "Concrete failing input A=[25,29]"
+ },
+ {
+  "item_id": 5,
+  "label": "specific",
+  "reason": "Only explores trivial all-non-confused assignment"
+ },
+ {
+  "item_id": 6,
+  "label": "vague",
+  "reason": "Generic claim of flawed tracking, no concrete case"
+ },
+ {
+  "item_id": 7,
+  "label": "specific",
+  "reason": "Cites N=3 values and missing 0"
+ },
+ {
+  "item_id": 8,
+  "label": "specific",
+  "reason": "Uses k%l instead of 2^K exponent"
+ },
+ {
+  "item_id": 9,
+  "label": "specific",
+  "reason": "Segment tree update skips propagation"
+ },
+ {
+  "item_id": 10,
+  "label": "specific",
+  "reason": "Names wrong formula, N=4 counterexample"
+ },
+ {
+  "item_id": 11,
+  "label": "specific",
+  "reason": "Sample 2 outputs 3 instead of 2"
+ },
+ {
+  "item_id": 12,
+  "label": "specific",
+  "reason": "Concrete case N=4 all zeros"
+ },
+ {
+  "item_id": 13,
+  "label": "specific",
+  "reason": "Rotates layers from original grid, not sequentially"
+ },
+ {
+  "item_id": 14,
+  "label": "specific",
+  "reason": "O(N^2) state space at N=2e5"
+ },
+ {
+  "item_id": 15,
+  "label": "specific",
+  "reason": "RecursionError at N=5e5"
+ },
+ {
+  "item_id": 16,
+  "label": "specific",
+  "reason": "Concrete case N=1, M=2"
+ },
+ {
+  "item_id": 17,
+  "label": "specific",
+  "reason": "Chain-of-degree-3 example undercounted"
+ },
+ {
+  "item_id": 18,
+  "label": "specific",
+  "reason": "Prints hardcoded placeholder value"
+ },
+ {
+  "item_id": 19,
+  "label": "specific",
+  "reason": "y=deg[v]-1 counts non-leaf branches"
+ },
+ {
+  "item_id": 20,
+  "label": "specific",
+  "reason": "Checks only one pair, not all K"
+ },
+ {
+  "item_id": 21,
+  "label": "specific",
+  "reason": "List slicing O(QN) at given sizes"
+ },
+ {
+  "item_id": 22,
+  "label": "specific",
+  "reason": "Code ignores negative white balls entirely"
+ },
+ {
+  "item_id": 23,
+  "label": "specific",
+  "reason": "C(100,50) combinations enumeration"
+ },
+ {
+  "item_id": 24,
+  "label": "specific",
+  "reason": "Just computes factorial of missing values"
+ },
+ {
+  "item_id": 25,
+  "label": "specific",
+  "reason": "Concrete case W=1,H=0 gives negative"
+ },
+ {
+  "item_id": 26,
+  "label": "specific",
+  "reason": "Wrong parity expression identified"
+ },
+ {
+  "item_id": 27,
+  "label": "specific",
+  "reason": "Sorted array gives O(N^2) chain traversal"
+ },
+ {
+  "item_id": 28,
+  "label": "specific",
+  "reason": "Prints hardcoded sample outputs"
+ },
+ {
+  "item_id": 29,
+  "label": "specific",
+  "reason": "Concrete input N=1, S=BW"
+ },
+ {
+  "item_id": 30,
+  "label": "specific",
+  "reason": "N*sqrt(A) divisor enumeration count"
+ },
+ {
+  "item_id": 31,
+  "label": "specific",
+  "reason": "Nested-loop polynomial multiplication at N=1e6"
+ },
+ {
+  "item_id": 32,
+  "label": "specific",
+  "reason": "Difference array applied once, ignores dynamics"
+ },
+ {
+  "item_id": 33,
+  "label": "specific",
+  "reason": "Disconnected graph case miscounted"
+ },
+ {
+  "item_id": 34,
+  "label": "specific",
+  "reason": "Concrete example [2,1,1,2]"
+ },
+ {
+  "item_id": 35,
+  "label": "specific",
+  "reason": "bisect_right clear-count logic named"
+ },
+ {
+  "item_id": 36,
+  "label": "specific",
+  "reason": "Fails on provided sample"
+ },
+ {
+  "item_id": 37,
+  "label": "specific",
+  "reason": "Fails sample 1"
+ },
+ {
+  "item_id": 38,
+  "label": "specific",
+  "reason": "O(QN^2) with N,Q=3000"
+ },
+ {
+  "item_id": 39,
+  "label": "specific",
+  "reason": "Artificially boosts strength to threshold"
+ },
+ {
+  "item_id": 40,
+  "label": "specific",
+  "reason": "Names cost<M threshold case"
+ },
+ {
+  "item_id": 41,
+  "label": "specific",
+  "reason": "Next-greater chain misreads visibility"
+ },
+ {
+  "item_id": 42,
+  "label": "specific",
+  "reason": "Concrete input 5 1 1 1"
+ },
+ {
+  "item_id": 43,
+  "label": "specific",
+  "reason": "Names product condition and priority queue"
+ },
+ {
+  "item_id": 44,
+  "label": "specific",
+  "reason": "Concrete case N=1, K=3"
+ },
+ {
+  "item_id": 45,
+  "label": "specific",
+  "reason": "Kick adds distance-1/2 cells without checks"
+ },
+ {
+  "item_id": 46,
+  "label": "vague",
+  "reason": "Retracts critique, concludes code correct; no failing case"
+ },
+ {
+  "item_id": 47,
+  "label": "specific",
+  "reason": "Concrete example (())()"
+ },
+ {
+  "item_id": 48,
+  "label": "specific",
+  "reason": "Wrong balance update expression"
+ },
+ {
+  "item_id": 49,
+  "label": "specific",
+  "reason": "Sample outputs 10 instead of 8"
+ },
+ {
+  "item_id": 50,
+  "label": "specific",
+  "reason": "Ignores confusion variables, assumes k=0"
+ },
+ {
+  "item_id": 51,
+  "label": "specific",
+  "reason": "Concrete example [1,1,1,2,2]"
+ },
+ {
+  "item_id": 52,
+  "label": "specific",
+  "reason": "Outputs n-1 or n-2 formula"
+ },
+ {
+  "item_id": 53,
+  "label": "specific",
+  "reason": "Concrete case N=3 [1,2,3]"
+ },
+ {
+  "item_id": 54,
+  "label": "vague",
+  "reason": "Generic claim subtraction logic wrong, no concrete case"
+ },
+ {
+  "item_id": 55,
+  "label": "vague",
+  "reason": "Generic greedy-is-wrong claim, no input or trace"
+ },
+ {
+  "item_id": 56,
+  "label": "specific",
+  "reason": "Concrete cases N=2 and N=3"
+ },
+ {
+  "item_id": 57,
+  "label": "specific",
+  "reason": "Omits third sub-block cost; cost==0 check"
+ },
+ {
+  "item_id": 58,
+  "label": "specific",
+  "reason": "O(N^2) per-element DP at N=2e5"
+ },
+ {
+  "item_id": 59,
+  "label": "specific",
+  "reason": "Floyd-Warshall per closure, 8e9 iterations"
+ },
+ {
+  "item_id": 60,
+  "label": "specific",
+  "reason": "Stores up to 9M tuples in set"
+ },
+ {
+  "item_id": 61,
+  "label": "specific",
+  "reason": "N(N-1) BFS states at N=2e5"
+ },
+ {
+  "item_id": 62,
+  "label": "specific",
+  "reason": "Dictionary copy loops O(N^2)"
+ },
+ {
+  "item_id": 63,
+  "label": "specific",
+  "reason": "3^W states with W=14"
+ },
+ {
+  "item_id": 64,
+  "label": "specific",
+  "reason": "Double loop O(N^2) at N=2e5"
+ },
+ {
+  "item_id": 65,
+  "label": "specific",
+  "reason": "Ignores sequential layer dependency"
+ },
+ {
+  "item_id": 66,
+  "label": "specific",
+  "reason": "Never updates current_ratings; stale searches"
+ },
+ {
+  "item_id": 67,
+  "label": "specific",
+  "reason": "Rejects sample 1"
+ },
+ {
+  "item_id": 68,
+  "label": "specific",
+  "reason": "O(QN^2) loop count given"
+ },
+ {
+  "item_id": 69,
+  "label": "specific",
+  "reason": "Names odd-part bug and double counting"
+ },
+ {
+  "item_id": 70,
+  "label": "specific",
+  "reason": "State count and operation estimate given"
+ },
+ {
+  "item_id": 71,
+  "label": "specific",
+  "reason": "Processes bars in descending row order"
+ },
+ {
+  "item_id": 72,
+  "label": "specific",
+  "reason": "Names misaligned indices like new_dp[i]=i"
+ },
+ {
+  "item_id": 73,
+  "label": "specific",
+  "reason": "Placeholder formula inv0*k*2//n"
+ },
+ {
+  "item_id": 74,
+  "label": "specific",
+  "reason": "Repeated heap pushes double-count paths"
+ },
+ {
+  "item_id": 75,
+  "label": "specific",
+  "reason": "Concrete example [4,5,9,10]"
+ },
+ {
+  "item_id": 76,
+  "label": "specific",
+  "reason": "Wrong bipartite assumption; DP cost at N=30"
+ },
+ {
+  "item_id": 77,
+  "label": "specific",
+  "reason": "Ignores donors running out of stones"
+ },
+ {
+  "item_id": 78,
+  "label": "specific",
+  "reason": "Nested loops computing C_i"
+ },
+ {
+  "item_id": 79,
+  "label": "specific",
+  "reason": "Edges only from initially filled boxes"
+ },
+ {
+  "item_id": 80,
+  "label": "specific",
+  "reason": "Names wrong split condition"
+ },
+ {
+  "item_id": 81,
+  "label": "specific",
+  "reason": "Names nonsensical formula used"
+ },
+ {
+  "item_id": 82,
+  "label": "specific",
+  "reason": "Names C[i*j] mis-index and missing base"
+ },
+ {
+  "item_id": 83,
+  "label": "specific",
+  "reason": "Undefined char variable in loop"
+ },
+ {
+  "item_id": 84,
+  "label": "specific",
+  "reason": "Names subtraction-based flip counting"
+ },
+ {
+  "item_id": 85,
+  "label": "specific",
+  "reason": "Premature break in Fenwick update"
+ },
+ {
+  "item_id": 86,
+  "label": "specific",
+  "reason": "Counts adjacent index inequality instead"
+ },
+ {
+  "item_id": 87,
+  "label": "specific",
+  "reason": "Uses min y instead of max y"
+ },
+ {
+  "item_id": 88,
+  "label": "specific",
+  "reason": "O(N^2) adjacency construction"
+ },
+ {
+  "item_id": 89,
+  "label": "specific",
+  "reason": "Loop body is pass; undefined max_val"
+ },
+ {
+  "item_id": 90,
+  "label": "specific",
+  "reason": "Concrete input i"
+ },
+ {
+  "item_id": 91,
+  "label": "specific",
+  "reason": "K*N=1e9 operations"
+ },
+ {
+  "item_id": 92,
+  "label": "specific",
+  "reason": "Sample outputs 6 instead of 3"
+ },
+ {
+  "item_id": 93,
+  "label": "specific",
+  "reason": "1.2e9 divisor operations"
+ },
+ {
+  "item_id": 94,
+  "label": "specific",
+  "reason": "String rebuild O(n^2) at n=5e5"
+ },
+ {
+  "item_id": 95,
+  "label": "specific",
+  "reason": "Sample outputs 10 instead of 11"
+ },
+ {
+  "item_id": 96,
+  "label": "specific",
+  "reason": "Per-query sort, K*N log N"
+ },
+ {
+  "item_id": 97,
+  "label": "specific",
+  "reason": "isqrt(n//4) should be isqrt(n)"
+ },
+ {
+  "item_id": 98,
+  "label": "specific",
+  "reason": "Heap updated before candidate computed"
+ },
+ {
+  "item_id": 99,
+  "label": "specific",
+  "reason": "Concrete cycle a->b->c->a"
+ },
+ {
+  "item_id": 100,
+  "label": "specific",
+  "reason": "Concrete input 1 100 1 100"
+ },
+ {
+  "item_id": 101,
+  "label": "specific",
+  "reason": "O(N^4) transitions at N=100"
+ },
+ {
+  "item_id": 102,
+  "label": "vague",
+  "reason": "Concludes code is correct; no failing case"
+ },
+ {
+  "item_id": 103,
+  "label": "specific",
+  "reason": "Concrete sequence 1 2 1"
+ },
+ {
+  "item_id": 104,
+  "label": "specific",
+  "reason": "Loop limited to B+1 misses large s"
+ },
+ {
+  "item_id": 105,
+  "label": "vague",
+  "reason": "Muddled generic formula disagreement, no concrete case"
+ },
+ {
+  "item_id": 106,
+  "label": "vague",
+  "reason": "Generic claim update definitions wrong, no example"
+ },
+ {
+  "item_id": 107,
+  "label": "specific",
+  "reason": "Concrete input ioi"
+ },
+ {
+  "item_id": 108,
+  "label": "specific",
+  "reason": "Names wrong completion count formula"
+ },
+ {
+  "item_id": 109,
+  "label": "specific",
+  "reason": "Uses prefix sum of A_i/(i-1)"
+ },
+ {
+  "item_id": 110,
+  "label": "specific",
+  "reason": "Edge case: later digits equal first"
+ },
+ {
+  "item_id": 111,
+  "label": "specific",
+  "reason": "Greedy left-to-right simplify cannot backtrack"
+ },
+ {
+  "item_id": 112,
+  "label": "specific",
+  "reason": "Assumes union is single interval"
+ },
+ {
+  "item_id": 113,
+  "label": "specific",
+  "reason": "Returns -1 when lengths sum differs"
+ },
+ {
+  "item_id": 114,
+  "label": "specific",
+  "reason": "Block 3 in sample 1 fails"
+ },
+ {
+  "item_id": 115,
+  "label": "specific",
+  "reason": "Concrete input 10 -20 5"
+ },
+ {
+  "item_id": 116,
+  "label": "specific",
+  "reason": "Placeholder answer for sample input"
+ },
+ {
+  "item_id": 117,
+  "label": "specific",
+  "reason": "Concrete case A=[1,2], B=[3,4]"
+ },
+ {
+  "item_id": 118,
+  "label": "specific",
+  "reason": "O(H*2^W) with H=2e5, W=18"
+ },
+ {
+  "item_id": 119,
+  "label": "specific",
+  "reason": "Visited check blocks reachable states"
+ },
+ {
+  "item_id": 120,
+  "label": "specific",
+  "reason": "Undefined char, pass section, 51^8 states"
+ },
+ {
+  "item_id": 121,
+  "label": "specific",
+  "reason": "Sample 1 outputs 3,3,3 vs 3,1,1"
+ },
+ {
+  "item_id": 122,
+  "label": "specific",
+  "reason": "Zeroes whole matrix; fixed entries survive"
+ },
+ {
+  "item_id": 123,
+  "label": "specific",
+  "reason": "Final print(3) hardcoded"
+ },
+ {
+  "item_id": 124,
+  "label": "specific",
+  "reason": "Concrete example ()()()"
+ },
+ {
+  "item_id": 125,
+  "label": "specific",
+  "reason": "Treats segment as single jump"
+ },
+ {
+  "item_id": 126,
+  "label": "specific",
+  "reason": "dfs unimplemented; degree-1 case"
+ },
+ {
+  "item_id": 127,
+  "label": "specific",
+  "reason": "Only checks all-ones and N=3 zeros"
+ },
+ {
+  "item_id": 128,
+  "label": "specific",
+  "reason": "O(NM) house iteration, 4e10"
+ },
+ {
+  "item_id": 129,
+  "label": "specific",
+  "reason": "Names band init and boundary errors"
+ },
+ {
+  "item_id": 130,
+  "label": "specific",
+  "reason": "Misses 32, 128; sample 3 output"
+ },
+ {
+  "item_id": 131,
+  "label": "specific",
+  "reason": "Nested loop over unique elements"
+ },
+ {
+  "item_id": 132,
+  "label": "specific",
+  "reason": "Concrete case N=1, M=2 outputs 6"
+ },
+ {
+  "item_id": 133,
+  "label": "specific",
+  "reason": "Recomputes DP per query, 4e10"
+ },
+ {
+  "item_id": 134,
+  "label": "specific",
+  "reason": "Searches degree-3 instead of degree-2 nodes"
+ },
+ {
+  "item_id": 135,
+  "label": "specific",
+  "reason": "Sorts T, ignoring operation order"
+ },
+ {
+  "item_id": 136,
+  "label": "specific",
+  "reason": "Undefined max_val, pass loop"
+ },
+ {
+  "item_id": 137,
+  "label": "specific",
+  "reason": "Nested loops over all subarrays"
+ },
+ {
+  "item_id": 138,
+  "label": "specific",
+  "reason": "Sorts by A only, not ratio"
+ },
+ {
+  "item_id": 139,
+  "label": "specific",
+  "reason": "Kick only when adjacent cell is wall"
+ },
+ {
+  "item_id": 140,
+  "label": "specific",
+  "reason": "Doesn't remove people who already ate"
+ },
+ {
+  "item_id": 141,
+  "label": "specific",
+  "reason": "Only counts permutations of remaining ranks"
+ },
+ {
+  "item_id": 142,
+  "label": "specific",
+  "reason": "Uses undirected components"
+ },
+ {
+  "item_id": 143,
+  "label": "specific",
+  "reason": "Outputs 2 instead of 6 on sample"
+ },
+ {
+  "item_id": 144,
+  "label": "specific",
+  "reason": "Assumes each box operated at most once"
+ },
+ {
+  "item_id": 145,
+  "label": "specific",
+  "reason": "Nested loop O(M^2); missing black consistency"
+ },
+ {
+  "item_id": 146,
+  "label": "specific",
+  "reason": "Range off by one; N=3 A=[1,1,1]"
+ },
+ {
+  "item_id": 147,
+  "label": "specific",
+  "reason": "Hardcoded print for samples"
+ },
+ {
+  "item_id": 148,
+  "label": "specific",
+  "reason": "Sample 2 outputs 5 instead of -1"
+ },
+ {
+  "item_id": 149,
+  "label": "specific",
+  "reason": "Sample outputs 3 instead of 6"
+ },
+ {
+  "item_id": 150,
+  "label": "specific",
+  "reason": "Concrete case S=919, T=87"
+ },
+ {
+  "item_id": 151,
+  "label": "specific",
+  "reason": "Dijkstra state on min strength invalid"
+ },
+ {
+  "item_id": 152,
+  "label": "specific",
+  "reason": "Recomputes DP per query, O(Q*HW)"
+ },
+ {
+  "item_id": 153,
+  "label": "specific",
+  "reason": "Ignores SCC equal values; new_dp[i]=ways"
+ },
+ {
+  "item_id": 154,
+  "label": "specific",
+  "reason": "String slicing in loop at N=5e5"
+ }
+]

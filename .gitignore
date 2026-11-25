@@ -220,3 +220,15 @@ __marimo__/
 # Project-specific
 scratch_*/
 run_experiment_data/cache/
+run_code_data/cache/
+run_code_data/calibration_cache/
+run_code_data/raw/
+
+# Scratch scripts and IDE files
+live_check*.py
+mrdre.py
+onecheck.py
+quote.py
+table.py
+reprobe_gptoss.py
+.vscode/
