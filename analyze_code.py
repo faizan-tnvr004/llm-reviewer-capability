@@ -308,7 +308,9 @@ def evaluate_hypotheses(rows: list[dict]) -> dict:
         res["H4"] = {"verdict": "supported" if ok else "not supported",
                      "k_fr": k_fr, "n_right": len(right4), "frr": frr,
                      "k_fa": k_fa, "n_wrong": len(wrong4),
-                     "text": (f"C4 FRR {k_fr}/{len(right4)} = {frr*100:.1f}%{_low_n(len(right4))}; "
+                     "text": (f"C4 FRR {k_fr}/{len(right4)} = {frr*100:.1f}%{_low_n(len(right4))} "
+                              f"(Wilson 95% upper bound {wilson_ci(k_fr, len(right4))[1]*100:.1f}%; the pre-registered "
+                              f"criterion 'FRR <= 5%' is applied to the point estimate, as for H1); "
                               f"false accepts {k_fa}/{len(wrong4)}{_low_n(len(wrong4))}")}
     else:
         res["H4"] = {"verdict": "not evaluable", "text": "C4 missing"}
@@ -604,22 +606,44 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
     ])
     for m in mcnemar_results:
         md_lines.append(f"| **{m['pair']}** | {m['accA']*100:.1f}% | {m['accB']*100:.1f}% | {m['diff']*100:+.1f}% | {m['b_val']} / {m['c_val']} | {m['p_raw']:.4f} | {m.get('p_adj', 1.0):.4f} | {m.get('star', 'ns')} |")
+    nominal = [m for m in mcnemar_results if m["p_raw"] < 0.05 and m.get("p_adj", 1.0) >= 0.05]
+    if nominal:
+        md_lines.extend(["", "Nominal significance before correction does not survive Holm: " + "; ".join(
+            f"{m['pair']} has raw p = {m['p_raw']:.4f} (b/c = {m['b_val']}/{m['c_val']}) but Holm-adjusted p = {m['p_adj']:.4f}"
+            for m in nominal) + ". None of the five pre-registered comparisons is significant after correction."])
 
     md_lines.extend([
         "",
         "## 2. Reviewer Quality & Error Detection",
         "",
-        "| Condition | Recall on Wrong A0 | False Rejection Rate (FRR) | Repair Rate | Damage Rate | Malformed Review Rate |",
+        "Each rate is shown as count / denominator, percentage, and [Wilson 95% CI]. The denominators are the pre-registered ones and differ by column:",
+        "",
+        "- **Recall**: rejected / wrong A0.",
+        "- **FRR**: rejected / correct A0.",
+        "- **Repair**: fixed / rejected wrong A0.",
+        "- **Damage**: broken / rejected correct A0.",
+        "- **Malformed**: malformed reviews / all reviews.",
+        "",
+        "Section 3 instead splits *all* rejections of a condition into outcome categories, so its percentages use a different denominator (total rejections).",
+        "",
+        "| Condition | Recall (rejected / wrong A0) | FRR (rejected / correct A0) | Repair (fixed / rejected wrong A0) | Damage (broken / rejected correct A0) | Malformed Review Rate |",
         "|---|---|---|---|---|---|",
     ])
+
+    def frac(rate, n, ci):
+        k = round(rate * n)
+        return f"{k}/{n} = {rate*100:.1f}% [{ci[0]:.2f}, {ci[1]:.2f}]" if n else "0/0"
+
     for c in conds:
         r = reviewer_stats[c]
+        n_rev = cond_stats[c]["n"] if c != "C0" else 0
+        k_malf = round(r["malformed"] * cond_stats[c]["n"])
         md_lines.append(
-            f"| **{c}** | {r['recall']*100:.1f}% [{r['recall_ci'][0]:.2f}, {r['recall_ci'][1]:.2f}] | "
-            f"{r['frr']*100:.1f}% [{r['frr_ci'][0]:.2f}, {r['frr_ci'][1]:.2f}] | "
-            f"{r['repair']*100:.1f}% [{r['repair_ci'][0]:.2f}, {r['repair_ci'][1]:.2f}] | "
-            f"{r['damage']*100:.1f}% [{r['damage_ci'][0]:.2f}, {r['damage_ci'][1]:.2f}] | "
-            f"{r['malformed']*100:.1f}% |"
+            f"| **{c}** | {frac(r['recall'], r['n_wrong_a0'], r['recall_ci'])} | "
+            f"{frac(r['frr'], r['n_right_a0'], r['frr_ci'])} | "
+            f"{frac(r['repair'], r['n_rej_wrong'], r['repair_ci'])} | "
+            f"{frac(r['damage'], r['n_rej_right'], r['damage_ci'])} | "
+            f"{(f'{k_malf}/{n_rev} = ' + format(r['malformed']*100, '.1f') + '%') if n_rev else '-'} |"
         )
 
     md_lines.extend([
@@ -629,6 +653,8 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
         "Rejection classification uses normalized AST hash (`ast_hash`) as the primary definition of program identity (ignoring comments, docstrings, and formatting). Text-hash counts (`final_code_hash == a0_code_hash`) are reported alongside in brackets `[text]`.",
         "",
         "In this table, \"Other\" means the program changed and its correctness did not flip: wrong to a different wrong program, *or correct to a different correct program*. In code the second case is common, because the executor nearly always rewrites a program it is told is wrong. For the same reason, `rej_quality.py`'s \"corrected false-rejection rate\" ((damage + nc-right) / correct A0) undercounts false rejections on this log, since a correct program rewritten into another correct one counts as \"other\". The pre-registered false-rejection rate is the one in Section 2 (rejected correct A0 / correct A0).",
+        "",
+        "Percentages in this table are shares of the condition's total rejections (for example, C1 repair 7/75 here vs 7/55 rejected-wrong in Section 2).",
         "",
         "| Condition | Rejections | Repair (Useful) | Damage (Harmful) | No-Change Wrong (Ignored) [AST / Text] | No-Change Right (Harmless FR) [AST / Text] | Other |",
         "|---|---|---|---|---|---|---|",
@@ -717,8 +743,8 @@ def run_analysis(log_path: str, tokens_path: str | None = None, out_path: str | 
         f"| Self-Review Delta (C1 vs C0) | +6.0% (52% -> 58%, p=0.1460 ns) | {cond_stats.get('C1', {}).get('delta', 0)*100:+.1f}% | {sig_verdict(m1, False).replace('Replicated', 'Replicated: no significant gain in either study')} |",
         f"| Cross-Family Delta (C2 vs C0) | +12.0% (52% -> 64%, p=0.0005 ***) | {cond_stats.get('C2', {}).get('delta', 0)*100:+.1f}% | {sig_verdict(m2, True)} |",
         f"| Self-Review False Rejection Rate (C1 FRR) | 35% (18/52 correct answers) | {pct(k_fr, n_right)} | {'Replicated' if frr >= 0.20 else 'Not replicated'} (pre-registered threshold 20%) |",
-        f"| Ignored False Rejections (code unchanged, AST hash) | 83% (15 of 18 unchanged) | {pct(k_same, n_fr)} | {'Replicated' if n_fr and k_same / n_fr > 0.5 else f'Not replicated: the executor rewrote {n_changed} of {n_fr} correct programs'} |",
-        f"| Damage on False Rejection (changed and broken) | 100% of changes broke the answer (3/3) | {pct(k_dmg, n_changed)} of changed programs broke | {'Partly replicated: revisions still damage some correct programs, at a lower rate' if 0 < k_dmg < n_changed else ('Replicated' if n_changed and k_dmg == n_changed else 'Not replicated: no damage')} |",
+        f"| False rejections left unchanged (Section 3 'No-Change Right', AST hash) | 83% (15 of 18 unchanged) | {pct(k_same, n_fr)} | {'Replicated' if n_fr and k_same / n_fr > 0.5 else f'Not replicated: the executor rewrote {n_changed} of {n_fr} correct programs'} |",
+        f"| False rejections that broke a changed program (Section 3 'Damage' / changed) | 100% of changes broke the answer (3/3) | {pct(k_dmg, n_changed)} of changed programs broke | {'Partly replicated: revisions still damage some correct programs, at a lower rate' if 0 < k_dmg < n_changed else ('Replicated' if n_changed and k_dmg == n_changed else 'Not replicated: no damage')} |",
         f"| Public Sample Tests Reviewer (C4) | N/A (code-only condition) | {cond_stats.get('C4', {}).get('accuracy', 0)*100:.1f}% accuracy; FRR {pct(c4_fr, c4.get('n_right_a0', 0))}; false accepts {c4_false_accept_count}/{c4_false_accept_total} | New in the code study |",
         "",
     ])

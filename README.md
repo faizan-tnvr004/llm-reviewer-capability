@@ -162,7 +162,7 @@ Pre-registered hypotheses:
 - **H1, supported**: self-review falsely rejected 20 of 57 correct programs (35.1%, Wilson 95% CI 24–48%), the same rate as in the math study (35%).
 - **H2, not supported**: after a false self-rejection, the executor rewrote 19 of 20 correct programs and left only 1 unchanged. In math it ignored 15 of 18. 4 of the 19 rewrites broke a correct program.
 - **H3, not supported**: the cross-family reviewer's +4.8 point gain (2 programs broken, 8 fixed) is not significant (Holm p = 0.44). The math study's significant cross-family gain did not replicate on code.
-- **H4, supported**: the public-test reviewer falsely rejected 0 of 57 correct programs, but 19 of 68 wrong programs (27.9%) passed every sample test.
+- **H4, supported**: the public-test reviewer falsely rejected 0 of 57 correct programs (95% upper bound 6.3%; the pre-registered criterion of 5% or less applies to the point estimate), but 19 of 68 wrong programs (27.9%) passed every sample test.
 
 No difference here reaches significance after Holm correction across the five pre-registered comparisons. With N = 125, effects of a few points cannot be ruled out; see the intervals in `RESULTS.md`.
 

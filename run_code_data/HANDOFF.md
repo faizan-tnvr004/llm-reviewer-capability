@@ -8,7 +8,7 @@ On 125 LiveCodeBench problems, the executor (`gemini-3.1-flash-lite`) solved 57 
 - self-review reached 60 (+2.4 points);
 - the cross-family reviewer `openai/gpt-oss-20b` reached 63 (+4.8 points, 2 broken / 8 fixed, Holm p = 0.44);
 - the weak Llama 3.1 8B reviewer stayed at 57;
-- the public-sample-test reviewer reached 63 (+4.8 points, 0 broken / 6 fixed, raw p = 0.031, Holm p = 0.16).
+- the public-sample-test reviewer reached 63 (+4.8 points, 0 broken / 6 fixed, raw p = 0.031 but Holm p = 0.16, so not significant after correction).
 
 Self-review falsely rejected 20 of 57 correct programs (35.1%), the same rate as in the math study. But unlike math, where the executor ignored 15 of 18 false rejections, here it rewrote 19 of 20 correct programs, and 4 of those rewrites broke a working program. The public sample tests never rejected a correct program (0 of 57), but 19 of 68 wrong programs (27.9%) passed every sample test. A second Docker pass changed the fingerprint of 3 of 328 distinct programs: two borderline timeouts and one artifact of the laptop sleeping. Neither the confirmatory results nor any condition comparison depends on them.
 
@@ -17,7 +17,7 @@ Self-review falsely rejected 20 of 57 correct programs (35.1%), the same rate as
 - **H1, supported**: C1 false-rejection rate 20/57 = 35.1% (Wilson 95% CI 24–48%), at or above the pre-registered 20%.
 - **H2, not supported**: 1 of 20 C1 false rejections left the program unchanged by AST hash (0 of 20 by text hash). The pre-registered threshold was more than 50%.
 - **H3, not supported**: C2 50.4% vs C0 45.6%, exact McNemar b = 2, c = 8, raw p = 0.109, Holm p = 0.438.
-- **H4, supported**: C4 false-rejection rate 0/57 = 0.0% (at most 5%), and false accepts 19/68 (more than 0).
+- **H4, supported**: C4 false-rejection rate 0/57 = 0.0% (pre-registered criterion: at most 5%, applied to the point estimate; Wilson 95% upper bound 6.3%), and false accepts 19/68 (more than 0).
 - **E2 (exploratory)**:
   - A0 accuracy: 34/78 before the 2025-01-31 cutoff vs 23/47 after (Fisher p = 0.58).
   - H1 and H4 still hold on the 47 post-cutoff problems.

@@ -24,21 +24,35 @@
 | **C0 vs C4** | 45.6% | 50.4% | +4.8% | 0 / 6 | 0.0312 | 0.1562 | ns |
 | **C2 vs C4** | 50.4% | 50.4% | +0.0% | 5 / 5 | 1.0000 | 1.0000 | ns |
 
+Nominal significance before correction does not survive Holm: C0 vs C4 has raw p = 0.0312 (b/c = 0/6) but Holm-adjusted p = 0.1562. None of the five pre-registered comparisons is significant after correction.
+
 ## 2. Reviewer Quality & Error Detection
 
-| Condition | Recall on Wrong A0 | False Rejection Rate (FRR) | Repair Rate | Damage Rate | Malformed Review Rate |
+Each rate is shown as count / denominator, percentage, and [Wilson 95% CI]. The denominators are the pre-registered ones and differ by column:
+
+- **Recall**: rejected / wrong A0.
+- **FRR**: rejected / correct A0.
+- **Repair**: fixed / rejected wrong A0.
+- **Damage**: broken / rejected correct A0.
+- **Malformed**: malformed reviews / all reviews.
+
+Section 3 instead splits *all* rejections of a condition into outcome categories, so its percentages use a different denominator (total rejections).
+
+| Condition | Recall (rejected / wrong A0) | FRR (rejected / correct A0) | Repair (fixed / rejected wrong A0) | Damage (broken / rejected correct A0) | Malformed Review Rate |
 |---|---|---|---|---|---|
-| **C0** | 0.0% [0.00, 0.05] | 0.0% [0.00, 0.06] | 0.0% [0.00, 0.00] | 0.0% [0.00, 0.00] | 0.0% |
-| **C1** | 80.9% [0.70, 0.88] | 35.1% [0.24, 0.48] | 12.7% [0.06, 0.24] | 20.0% [0.08, 0.42] | 0.0% |
-| **C2** | 92.6% [0.84, 0.97] | 22.8% [0.14, 0.35] | 12.7% [0.07, 0.23] | 15.4% [0.04, 0.42] | 9.6% |
-| **C3** | 4.4% [0.02, 0.12] | 0.0% [0.00, 0.06] | 0.0% [0.00, 0.56] | 0.0% [0.00, 0.00] | 0.0% |
-| **C4** | 72.1% [0.60, 0.81] | 0.0% [0.00, 0.06] | 12.2% [0.06, 0.24] | 0.0% [0.00, 0.00] | 0.0% |
+| **C0** | 0/68 = 0.0% [0.00, 0.05] | 0/57 = 0.0% [0.00, 0.06] | 0/0 | 0/0 | - |
+| **C1** | 55/68 = 80.9% [0.70, 0.88] | 20/57 = 35.1% [0.24, 0.48] | 7/55 = 12.7% [0.06, 0.24] | 4/20 = 20.0% [0.08, 0.42] | 0/125 = 0.0% |
+| **C2** | 63/68 = 92.6% [0.84, 0.97] | 13/57 = 22.8% [0.14, 0.35] | 8/63 = 12.7% [0.07, 0.23] | 2/13 = 15.4% [0.04, 0.42] | 12/125 = 9.6% |
+| **C3** | 3/68 = 4.4% [0.02, 0.12] | 0/57 = 0.0% [0.00, 0.06] | 0/3 = 0.0% [0.00, 0.56] | 0/0 | 0/125 = 0.0% |
+| **C4** | 49/68 = 72.1% [0.60, 0.81] | 0/57 = 0.0% [0.00, 0.06] | 6/49 = 12.2% [0.06, 0.24] | 0/0 | 0/125 = 0.0% |
 
 ## 3. Rejection Outcomes & Quality Breakdown
 
 Rejection classification uses normalized AST hash (`ast_hash`) as the primary definition of program identity (ignoring comments, docstrings, and formatting). Text-hash counts (`final_code_hash == a0_code_hash`) are reported alongside in brackets `[text]`.
 
 In this table, "Other" means the program changed and its correctness did not flip: wrong to a different wrong program, *or correct to a different correct program*. In code the second case is common, because the executor nearly always rewrites a program it is told is wrong. For the same reason, `rej_quality.py`'s "corrected false-rejection rate" ((damage + nc-right) / correct A0) undercounts false rejections on this log, since a correct program rewritten into another correct one counts as "other". The pre-registered false-rejection rate is the one in Section 2 (rejected correct A0 / correct A0).
+
+Percentages in this table are shares of the condition's total rejections (for example, C1 repair 7/75 here vs 7/55 rejected-wrong in Section 2).
 
 | Condition | Rejections | Repair (Useful) | Damage (Harmful) | No-Change Wrong (Ignored) [AST / Text] | No-Change Right (Harmless FR) [AST / Text] | Other |
 |---|---|---|---|---|---|---|
@@ -89,8 +103,8 @@ The verdict column is computed from this log. Math figures are the published mat
 | Self-Review Delta (C1 vs C0) | +6.0% (52% -> 58%, p=0.1460 ns) | +2.4% | Replicated: no significant gain in either study (+2.4 pts, b/c = 4/7, Holm p = 1.0000) |
 | Cross-Family Delta (C2 vs C0) | +12.0% (52% -> 64%, p=0.0005 ***) | +4.8% | Not replicated (+4.8 pts, b/c = 2/8, Holm p = 0.4375) |
 | Self-Review False Rejection Rate (C1 FRR) | 35% (18/52 correct answers) | 20/57 (35%) | Replicated (pre-registered threshold 20%) |
-| Ignored False Rejections (code unchanged, AST hash) | 83% (15 of 18 unchanged) | 1/20 (5%) | Not replicated: the executor rewrote 19 of 20 correct programs |
-| Damage on False Rejection (changed and broken) | 100% of changes broke the answer (3/3) | 4/19 (21%) of changed programs broke | Partly replicated: revisions still damage some correct programs, at a lower rate |
+| False rejections left unchanged (Section 3 'No-Change Right', AST hash) | 83% (15 of 18 unchanged) | 1/20 (5%) | Not replicated: the executor rewrote 19 of 20 correct programs |
+| False rejections that broke a changed program (Section 3 'Damage' / changed) | 100% of changes broke the answer (3/3) | 4/19 (21%) of changed programs broke | Partly replicated: revisions still damage some correct programs, at a lower rate |
 | Public Sample Tests Reviewer (C4) | N/A (code-only condition) | 50.4% accuracy; FRR 0/57 (0%); false accepts 19/68 | New in the code study |
 
 ## 6. Pre-Registered Hypotheses
@@ -100,7 +114,7 @@ The verdict column is computed from this log. Math figures are the published mat
 | **H1** | supported | C1 FRR 20/57 = 35.1% |
 | **H2** | not supported | unchanged after C1 false rejection: AST 1/20, text 0/20 |
 | **H3** | not supported | C0 45.6% vs C2 50.4%, b=2 c=8, p=0.1094, Holm p=0.4375 |
-| **H4** | supported | C4 FRR 0/57 = 0.0%; false accepts 19/68 |
+| **H4** | supported | C4 FRR 0/57 = 0.0% (Wilson 95% upper bound 6.3%; the pre-registered criterion 'FRR <= 5%' is applied to the point estimate, as for H1); false accepts 19/68 |
 
 ## 7. Exploratory E2: Temporal Sensitivity (boundary 2025-01-31)
 
@@ -118,5 +132,5 @@ Exploratory and non-confirmatory. Post-cutoff hypothesis checks are low-n sensit
 | H1 | supported | C1 FRR 7/23 = 30.4% |
 | H2 | inconclusive | unchanged after C1 false rejection: AST 0/7, text 0/7 (low-n); fewer than 10 false rejections |
 | H3 | not supported | C0 48.9% vs C2 51.1%, b=1 c=2, p=1.0000, Holm p=1.0000 |
-| H4 | supported | C4 FRR 0/23 = 0.0%; false accepts 9/24 |
+| H4 | supported | C4 FRR 0/23 = 0.0% (Wilson 95% upper bound 14.3%; the pre-registered criterion 'FRR <= 5%' is applied to the point estimate, as for H1); false accepts 9/24 |
 
