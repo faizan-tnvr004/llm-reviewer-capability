@@ -1,0 +1,26 @@
+[
+  {
+    "task_id": "abc374_f",
+    "code_hash": "3b4359de4f9e5f52",
+    "first_pass_max_test_wall_s": 4.965,
+    "third_pass_fingerprint": "PASS",
+    "third_pass_max_test_wall_s": 5.178,
+    "third_pass_wall_s": 40.6
+  },
+  {
+    "task_id": "abc390_d",
+    "code_hash": "4d893e2ea802156d",
+    "first_pass_max_test_wall_s": 4.911,
+    "third_pass_fingerprint": "PASS",
+    "third_pass_max_test_wall_s": 5.831,
+    "third_pass_wall_s": 48.9
+  },
+  {
+    "task_id": "abc384_e",
+    "code_hash": "8b59b32c3fcfab3a",
+    "first_pass_max_test_wall_s": 1.322,
+    "third_pass_fingerprint": "PASS",
+    "third_pass_max_test_wall_s": 0.81,
+    "third_pass_wall_s": 24.3
+  }
+]
